@@ -1,3 +1,13 @@
 node_modules/
 .env
 *.log
+
+.vercel
+.env*
+
+# Generated & temp
+downloads/*.zip
+workspaces/*
+.queue/*
+*.png
+.playwright-mcp/

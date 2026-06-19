@@ -7,9 +7,6 @@ RUN npm ci --production
 
 COPY . .
 
-RUN mkdir -p workspaces downloads logs
-RUN npx prisma generate
+RUN mkdir -p workspaces downloads logs .queue
 
-EXPOSE 3000
-
-CMD ["node", "apps/api/index.js"]
+CMD ["node", "worker/index.js"]

@@ -1,22 +1,61 @@
 version: "3.8"
 
 services:
-  ai-dev:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: aidev
+      POSTGRES_USER: aidev
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-aidev123}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+  api:
     build: .
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - ANTHROPIC_BASE_URL=${ANTHROPIC_BASE_URL}
-      - MODEL_NAME=${MODEL_NAME}
-      - BASE_URL=${BASE_URL:-http://localhost:3000}
-    volumes:
-      - ai-dev-workspaces:/app/workspaces
-      - ai-dev-downloads:/app/downloads
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://aidev:${DB_PASSWORD:-aidev123}@postgres:5432/aidev
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL}
+      MODEL_NAME: ${MODEL_NAME}
+      BASE_URL: ${BASE_URL:-http://localhost:3000}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: infra/docker/worker.Dockerfile
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://aidev:${DB_PASSWORD:-aidev123}@postgres:5432/aidev
+      REDIS_URL: redis://redis:6379
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL}
+      MODEL_NAME: ${MODEL_NAME}
+      BASE_URL: ${BASE_URL:-http://localhost:3000}
+    depends_on:
+      - postgres
+      - redis
     restart: unless-stopped
 
 volumes:
-  ai-dev-workspaces:
-  ai-dev-downloads:
+  pgdata:
+  redisdata:

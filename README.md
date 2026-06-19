@@ -1,17 +1,20 @@
-# 🤖 AI 自动开发系统
+# AI Dev Platform V9
 
-基于 Claude API 的自动代码生成系统。接收自然语言任务描述，自动规划并生成完整项目代码。
+商业级 AI 自动开发 SaaS 系统。
 
 ## 架构
 
 ```
-用户输入 → [Controller] → [Planner] → [Executor] → 输出文件
-                           (Claude API)   (文件操作)
+Web UI → API Gateway (Auth + RateLimit + Billing)
+           ↓
+       Redis Queue (BullMQ)
+           ↓
+       Worker Pool (Docker / Cluster)
+           ↓
+       AI Engine (Planner + Executor + LLM Router)
+           ↓
+       Project → zip → Download
 ```
-
-- **Controller**: 系统中枢，协调整个流程
-- **Planner**: 调用 Claude API 将任务分解为结构化步骤
-- **Executor**: 逐步执行计划，创建文件、运行命令
 
 ## 快速开始
 
@@ -21,41 +24,92 @@
 npm install
 ```
 
-### 2. 配置 API Key
-
-编辑 `.env` 文件：
-
-```
-ANTHROPIC_API_KEY=sk-ant-your-key-here
-```
-
-### 3. 运行
+### 2. 启动基础设施
 
 ```bash
+docker compose up -d postgres redis
+```
+
+### 3. 配置环境变量
+
+```bash
+cp .env.example .env
+# 编辑 .env，填入 ANTHROPIC_API_KEY 等
+```
+
+### 4. 初始化数据库
+
+```bash
+npm run db:generate
+npm run db:push
+```
+
+### 5. 启动服务（两个终端）
+
+```bash
+# 终端 1：API
 npm start
+
+# 终端 2：Worker
+npm run worker
 ```
 
-或指定自定义任务：
+打开 http://localhost:3000
+
+### Docker 一键启动
 
 ```bash
-node index.js "创建一个 Todo List 的 CLI 工具"
+docker compose up -d
 ```
 
-## 项目结构
+## 目录结构
 
 ```
-ai-dev-system/
-├── index.js              # 项目入口
-├── package.json
-├── .env                  # API Key 配置
-├── .gitignore
-├── controller/
-│   ├── index.js          # Controller — 流程协调
-│   ├── planner.js        # Planner — Claude API 任务分解
-│   └── executor.js       # Executor — 计划执行引擎
-└── output/               # 生成的项目输出目录（自动创建）
+├── apps/
+│   ├── api/          # API Gateway (Express)
+│   └── web/          # Web UI
+├── services/
+│   ├── auth/         # JWT 认证
+│   ├── billing/      # Stripe 计费
+│   ├── queue/        # Redis + BullMQ
+│   └── project/      # 项目 CRUD
+├── workers/
+│   ├── worker-core/  # 主 Worker 进程
+│   ├── planner/      # 任务拆解
+│   ├── executor/     # 代码生成
+│   └── llm-router/   # LLM 多 Provider 路由
+├── db/
+│   ├── schema.prisma # 数据模型
+│   └── client.js     # Prisma 客户端
+├── shared/
+│   ├── config.js     # 全局配置
+│   └── types/        # 类型常量
+├── infra/docker/     # Docker 配置
+├── docker-compose.yml
+└── vercel.json
 ```
 
-## 输出
+## API 接口
 
-所有生成的代码文件会写入 `output/` 目录。
+| 方法 | 路径 | 说明 | 认证 |
+|------|------|------|------|
+| POST | /api/auth/register | 注册 | ❌ |
+| POST | /api/auth/login | 登录 | ❌ |
+| GET | /api/projects | 项目列表 | ✅ |
+| POST | /api/projects | 创建项目 | ✅ |
+| GET | /api/projects/:id | 项目详情 | ✅ |
+| GET | /api/projects/:id/logs | 项目日志 | ✅ |
+| GET | /api/projects/:id/download | 下载 | ✅ |
+| POST | /api/billing/checkout | 升级 Pro | ✅ |
+| GET | /api/billing/usage | 查看用量 | ✅ |
+| POST | /api/keys | 创建 API Key | ✅ |
+| GET | /api/health | 健康检查 | ❌ |
+
+## 计费
+
+- Free: 5 个项目/天
+- Pro: 无限项目
+
+## LLM 路由
+
+自动 fallback: Claude → OpenAI

@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  name          String?
+  plan          Plan      @default(FREE)
+  apiKeys       ApiKey[]
+  projects      Project[]
+  usage         Usage[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model ApiKey {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  name      String?
+  lastUsed  DateTime?
+  createdAt DateTime @default(now())
+}
+
+model Project {
+  id            String        @id @default(cuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+  name          String
+  description   String
+  state         ProjectState  @default(PENDING)
+  progress      Int           @default(0)
+  currentStep   String?
+  downloadUrl   String?
+  error         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  logs          LogEntry[]
+  tasks         Task[]
+}
+
+model Task {
+  id            String    @id @default(cuid())
+  projectId     String
+  project       Project   @relation(fields: [projectId], references: [id])
+  type          String
+  status        String    @default("pending")
+  result        Json?
+  attempts      Int       @default(0)
+  maxAttempts   Int       @default(3)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model LogEntry {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+  level     String
+  message   String
+  createdAt DateTime @default(now())
+}
+
+model Usage {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String
+  amount    Int
+  createdAt DateTime @default(now())
+}
+
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum ProjectState {
+  PENDING
+  PLANNING
+  EXECUTING
+  VERIFYING
+  FIXING
+  SUCCESS
+  FAILED
+}

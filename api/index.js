@@ -1,6 +1,6 @@
 /**
- * Vercel Serverless 入口
- * 将 Express app 导出为 serverless function
+ * API 入口 — Express 应用
+ * 同时兼容 Vercel serverless 和本地运行
  */
 
 require("dotenv").config({ path: __dirname + "/../.env" });
@@ -11,27 +11,34 @@ const fs = require("fs");
 
 const app = express();
 
-// ─── 中间件 ───
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // 静态文件
-app.use(express.static(path.join(__dirname, "..", "server", "public")));
+app.use(express.static(path.join(__dirname, "..", "web")));
 
 // 下载目录
-const downloadsDir = path.join(__dirname, "..", "downloads");
-if (!fs.existsSync(downloadsDir)) fs.mkdirSync(downloadsDir, { recursive: true });
-app.use("/downloads", express.static(downloadsDir));
+const config = require("../shared/config");
+fs.mkdirSync(config.DOWNLOADS_DIR, { recursive: true });
+app.use("/downloads", express.static(config.DOWNLOADS_DIR));
 
-// ─── API 路由 ───
-const taskRoutes = require("../server/routes/task");
-app.use("/api/task", taskRoutes);
-app.use("/api/tasks", taskRoutes);
-app.use("/api/download", taskRoutes);
+// 路由
+app.post("/api/create-task", require("./create-task"));
+app.get("/api/get-task", require("./get-task"));
+app.get("/api/download", require("./download"));
+app.get("/api/health", require("./health"));
 
-// ─── 首页 ───
+// 首页
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "..", "server", "public", "index.html"));
+  res.sendFile(path.join(__dirname, "..", "web", "index.html"));
 });
+
+// 本地启动
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`\n🌐 API Server: http://localhost:${PORT}\n`);
+  });
+}
 
 module.exports = app;

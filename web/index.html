@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>AI Dev Platform — Build Apps with AI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+tailwind.config={darkMode:'class',theme:{extend:{colors:{brand:{50:'#faf5ff',400:'#A855F7',500:'#8B5CF6',600:'#7C3AED',700:'#6D28D9'},accent:{400:'#06B6D4',500:'#3B82F6'},surface:{950:'#020408',900:'#0B0D14',800:'#11131F',700:'#161825',600:'#1A1D2E'}},fontFamily:{sans:['Inter','SF Pro Display','-apple-system','sans-serif'],mono:['JetBrains Mono','Cascadia Code','Fira Code','monospace']},animation:{'fade-in':'fadeIn .5s ease-out','slide-up':'slideUp .5s cubic-bezier(.16,1,.3,1)','slide-down':'slideDown .35s cubic-bezier(.16,1,.3,1)','scale-in':'scaleIn .3s cubic-bezier(.16,1,.3,1)','glow-pulse':'glowPulse 3s ease-in-out infinite','shimmer':'shimmer 2s linear infinite','float':'float 6s ease-in-out infinite','count-up':'countUp 2s ease-out','aurora':'aurora 8s ease-in-out infinite'},keyframes:{fadeIn:{'0%':{opacity:'0'},'100%':{opacity:'1'}},slideUp:{'0%':{opacity:'0',transform:'translateY(24px)'},'100%':{opacity:'1',transform:'translateY(0)'}},slideDown:{'0%':{opacity:'0',transform:'translateY(-12px)'},'100%':{opacity:'1',transform:'translateY(0)'}},scaleIn:{'0%':{opacity:'0',transform:'scale(.94)'},'100%':{opacity:'1',transform:'scale(1)'}},glowPulse:{'0%,100%':{boxShadow:'0 0 30px rgba(139,92,246,.1)'},'50%':{boxShadow:'0 0 60px rgba(139,92,246,.25)'}},shimmer:{'0%':{transform:'translateX(-100%)'},'100%':{transform:'translateX(100%)'}},float:{'0%,100%':{transform:'translateY(0)'},'50%':{transform:'translateY(-10px)'}},aurora:{'0%,100%':{transform:'translate(0,0) scale(1)'},'33%':{transform:'translate(40px,-30px) scale(1.1)'},'66%':{transform:'translate(-30px,20px) scale(.9)'}}}}}}
+</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{font-family:'Inter','SF Pro Display',-apple-system,sans-serif;background:#020408;color:#E2E8F0;min-height:100vh;overflow-x:hidden}
+/* Glass */
+.glass{background:rgba(17,19,31,.65);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border:1px solid rgba(255,255,255,.06)}
+.glass-strong{background:rgba(17,19,31,.85);backdrop-filter:blur(28px) saturate(200%);-webkit-backdrop-filter:blur(28px) saturate(200%);border:1px solid rgba(255,255,255,.08)}
+.glass-card{background:rgba(22,24,37,.55);backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%);border:1px solid rgba(255,255,255,.06);transition:all .35s cubic-bezier(.16,1,.3,1)}
+.glass-card:hover{border-color:rgba(139,92,246,.25);box-shadow:0 8px 40px rgba(139,92,246,.08);transform:translateY(-2px)}
+/* Gradients */
+.gradient-text{background:linear-gradient(135deg,#A855F7,#8B5CF6 30%,#06B6D4 70%,#3B82F6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.gradient-border{position:relative}.gradient-border::before{content:'';position:absolute;inset:0;border-radius:inherit;padding:1px;background:linear-gradient(135deg,rgba(139,92,246,.4),rgba(6,182,212,.4));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.gradient-bg{background:linear-gradient(135deg,#7C3AED,#8B5CF6 50%,#06B6D4)}
+.gradient-bg-subtle{background:linear-gradient(135deg,rgba(124,58,237,.06),rgba(139,92,246,.04),rgba(6,182,212,.04))}
+/* Prompt Box */
+.prompt-box{background:rgba(11,13,20,.7);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:1px solid rgba(255,255,255,.07);border-radius:20px;transition:all .4s cubic-bezier(.16,1,.3,1)}
+.prompt-box:focus-within{border-color:rgba(139,92,246,.45);box-shadow:0 0 0 4px rgba(139,92,246,.08),0 0 60px rgba(139,92,246,.06)}
+.prompt-box textarea{resize:none;overflow:hidden}
+/* Progress */
+.progress-glow{background:linear-gradient(90deg,#7C3AED,#8B5CF6,#06B6D4,#3B82F6);background-size:300% 100%;animation:progressShine 3s linear infinite}
+@keyframes progressShine{0%{background-position:300% 0}100%{background-position:-300% 0}}
+/* Terminal */
+.terminal{background:#060810;border:1px solid rgba(255,255,255,.05);border-radius:14px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.9;overflow-y:auto}.terminal .t-success{color:#34D399}.terminal .t-error{color:#F87171}.terminal .t-info{color:#818CF8}.terminal .t-warn{color:#FBBF24}.terminal .t-dim{color:#4B5563}
+/* Skeleton */
+.skeleton{background:linear-gradient(90deg,rgba(255,255,255,.03) 25%,rgba(255,255,255,.07) 50%,rgba(255,255,255,.03) 75%);background-size:200% 100%;animation:shimmer 2s linear infinite;border-radius:10px}
+/* Aurora */
+.aurora-layer{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.aurora-blob{position:absolute;border-radius:50%;filter:blur(140px);opacity:.12}
+.aurora-blob.a1{width:700px;height:700px;background:#7C3AED;top:-20%;right:-15%;animation:aurora 10s ease-in-out infinite}
+.aurora-blob.a2{width:500px;height:500px;background:#06B6D4;bottom:-10%;left:-10%;animation:aurora 12s ease-in-out infinite reverse}
+.aurora-blob.a3{width:400px;height:400px;background:#8B5CF6;top:40%;left:50%;animation:aurora 14s ease-in-out infinite}
+/* Scrollbar */
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.12)}
+/* Command Palette */
+.cmd-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:200;display:none;align-items:flex-start;justify-content:center;padding-top:15vh}
+.cmd-backdrop.open{display:flex}
+.cmd-palette{width:560px;max-height:400px;animation:slideDown .2s cubic-bezier(.16,1,.3,1)}
+.cmd-item{padding:10px 16px;border-radius:10px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:12px}
+.cmd-item:hover,.cmd-item.active{background:rgba(139,92,246,.12)}
+.cmd-item kbd{font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.4);font-family:'JetBrains Mono',monospace}
+/* Toast */
+.toast-enter{animation:slideDown .35s cubic-bezier(.16,1,.3,1)}.toast-exit{animation:toastOut .25s cubic-bezier(.16,1,.3,1) forwards}@keyframes toastOut{to{opacity:0;transform:translateX(80px)}}
+/* Bento */
+.bento-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}@media(max-width:768px){.bento-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:480px){.bento-grid{grid-template-columns:1fr}}
+.bento-card{background:rgba(22,24,37,.5);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:20px;cursor:pointer;transition:all .35s cubic-bezier(.16,1,.3,1);position:relative;overflow:hidden}
+.bento-card:hover{border-color:rgba(139,92,246,.25);box-shadow:0 8px 32px rgba(139,92,246,.08);transform:translateY(-2px)}
+.bento-card .bento-glow{position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at center,rgba(139,92,246,.06) 0%,transparent 60%);opacity:0;transition:opacity .4s}
+.bento-card:hover .bento-glow{opacity:1}
+/* Stats */
+.stat-card{background:rgba(22,24,37,.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:18px 20px;transition:all .35s cubic-bezier(.16,1,.3,1)}
+.stat-card:hover{border-color:rgba(139,92,246,.2);box-shadow:0 4px 24px rgba(139,92,246,.06)}
+.stat-value{font-size:28px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+/* Tabs */
+.tab{border-bottom:2px solid transparent;transition:all .2s;cursor:pointer}.tab.active{color:#A855F7;border-bottom-color:#A855F7}
+</style>
+</head>
+<body class="antialiased">
+
+<!-- Aurora Background -->
+<div class="aurora-layer"><div class="aurora-blob a1"></div><div class="aurora-blob a2"></div><div class="aurora-blob a3"></div></div>
+
+<!-- Toast Container -->
+<div id="toasts" style="position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px"></div>
+
+<!-- ─── COMMAND PALETTE ─── -->
+<div class="cmd-backdrop" id="cmdBackdrop" onclick="if(event.target===this)closeCmd()">
+<div class="cmd-palette glass-strong rounded-2xl overflow-hidden shadow-2xl shadow-purple-500/10 gradient-border" id="cmdPalette">
+<div class="p-4 border-b border-white/5">
+  <div class="flex items-center gap-3 px-2">
+    <i data-lucide="search" class="w-4 h-4 text-white/30"></i>
+    <input id="cmdInput" class="bg-transparent text-white text-sm outline-none flex-1 placeholder-white/20" placeholder="Search commands..." onkeydown="handleCmdKey(event)" oninput="filterCmd()" autofocus>
+  </div>
+</div>
+<div class="p-2" id="cmdList"></div>
+<div class="px-4 py-2 border-t border-white/5 flex items-center gap-4 text-[10px] text-white/20">
+  <span>↑↓ Navigate</span><span>↵ Open</span><span>Esc Close</span>
+</div>
+</div></div>
+
+<!-- ─── NAV ─── -->
+<nav class="glass-strong fixed top-0 left-0 right-0 z-50 px-6 py-3">
+<div class="max-w-6xl mx-auto flex items-center justify-between">
+  <div class="flex items-center gap-3">
+    <div class="w-9 h-9 rounded-xl gradient-bg flex items-center justify-center shadow-lg shadow-purple-500/20"><i data-lucide="zap" class="w-5 h-5 text-white"></i></div>
+    <span class="text-lg font-bold tracking-tight"><span class="gradient-text">AI Dev</span><span class="text-white/70 ml-1.5 text-[10px] bg-white/5 px-1.5 py-0.5 rounded-md border border-white/5 font-medium">V9.5</span></span>
+  </div>
+  <div class="hidden sm:flex items-center gap-6 text-sm">
+    <a href="#" onclick="switchTab('overview');document.getElementById('hero').scrollIntoView({behavior:'smooth'})" class="text-white/50 hover:text-white transition-colors duration-200 tab active" data-tab="overview">Overview</a>
+    <a href="#" onclick="switchTab('projects');document.getElementById('projects').scrollIntoView({behavior:'smooth'})" class="text-white/50 hover:text-white transition-colors duration-200 tab" data-tab="projects">Projects</a>
+    <a href="#" onclick="document.getElementById('templates').scrollIntoView({behavior:'smooth'})" class="text-white/50 hover:text-white transition-colors duration-200">Templates</a>
+  </div>
+  <div class="flex items-center gap-2">
+    <button onclick="openCmd()" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-white/30 border border-white/5 hover:text-white/60 hover:border-white/10 transition-all duration-200"><i data-lucide="search" class="w-3 h-3"></i>Ctrl+K</button>
+    <button onclick="refreshProjects()" class="p-2 rounded-lg hover:bg-white/5 transition-all duration-200 text-white/30 hover:text-white/70" title="Refresh"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+    <div class="w-8 h-8 rounded-full gradient-bg flex items-center justify-center text-[11px] font-bold text-white shadow-lg shadow-purple-500/20">U</div>
+  </div>
+</div>
+</nav>
+
+<!-- ═══════════════════ HERO ═══════════════════ -->
+<section id="hero" class="relative pt-28 pb-8 px-6 z-10">
+<div class="max-w-4xl mx-auto text-center">
+
+  <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full glass text-[11px] text-white/50 mb-6 animate-fade-in">
+    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> DeepSeek V4 Pro — All systems operational
+  </div>
+
+  <h1 class="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.05] mb-5 animate-slide-up">
+    <span class="gradient-text">Build software</span><br>
+    <span class="text-white">with natural language</span>
+  </h1>
+  <p class="text-lg text-white/30 mb-10 max-w-xl mx-auto animate-slide-up" style="animation-delay:.1s">
+    Describe your idea. AI handles architecture, coding, dependencies, and packaging.
+  </p>
+
+  <!-- ─── Stats Bar ─── -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10 animate-slide-up" style="animation-delay:.15s">
+    <div class="stat-card text-center">
+      <div class="stat-value gradient-text" data-count="12847">0</div>
+      <div class="text-[11px] text-white/30 mt-1 font-medium uppercase tracking-wider">Projects</div>
+    </div>
+    <div class="stat-card text-center">
+      <div class="stat-value text-emerald-400" data-count="99.2">0</div>
+      <div class="text-[11px] text-white/30 mt-1 font-medium uppercase tracking-wider">Success Rate</div>
+    </div>
+    <div class="stat-card text-center">
+      <div class="stat-value text-accent-400" data-count="3">0</div>
+      <div class="text-[11px] text-white/30 mt-1 font-medium uppercase tracking-wider">Workers</div>
+    </div>
+    <div class="stat-card text-center">
+      <div class="stat-value text-brand-400" id="todayCount">0</div>
+      <div class="text-[11px] text-white/30 mt-1 font-medium uppercase tracking-wider">Today</div>
+    </div>
+  </div>
+
+  <!-- ─── Prompt Box ─── -->
+  <div class="prompt-box max-w-2xl mx-auto animate-slide-up" style="animation-delay:.2s">
+    <textarea id="promptInput" class="w-full bg-transparent text-white placeholder-white/25 text-[15px] leading-relaxed px-6 pt-5 pb-3 outline-none" placeholder="Describe the project you want to build..." rows="2" onkeydown="handlePromptKey(event)" oninput="autoGrow(this)"></textarea>
+    <div class="flex items-center justify-between px-5 pb-4 gap-2">
+      <div class="flex items-center gap-1">
+        <button class="p-1.5 rounded-lg text-white/20 hover:text-white/50 hover:bg-white/5 transition-all duration-200" title="Attach file"><i data-lucide="paperclip" class="w-4 h-4"></i></button>
+        <button class="p-1.5 rounded-lg text-white/20 hover:text-white/50 hover:bg-white/5 transition-all duration-200" title="Git repository"><i data-lucide="git-branch" class="w-4 h-4"></i></button>
+        <button class="p-1.5 rounded-lg text-white/20 hover:text-white/50 hover:bg-white/5 transition-all duration-200" title="Advanced options"><i data-lucide="settings-2" class="w-4 h-4"></i></button>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-[10px] text-white/15 hidden sm:block">↵ Send &nbsp; Shift+↵ New line</span>
+        <button id="generateBtn" onclick="createProject()" class="gradient-bg text-white px-5 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-purple-500/25 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100">
+          <i data-lucide="sparkles" class="w-4 h-4"></i><span id="btnLabel">Generate</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick prompts -->
+  <div class="flex flex-wrap justify-center gap-2 mt-5 animate-fade-in" style="animation-delay:.3s">
+    <button onclick="quickPrompt('Create a SaaS dashboard with Next.js and TailwindCSS')" class="px-3 py-1.5 rounded-full glass text-[11px] text-white/35 hover:text-white/70 hover:border-white/10 transition-all duration-200">SaaS Dashboard</button>
+    <button onclick="quickPrompt('Build a REST API with Express and PostgreSQL')" class="px-3 py-1.5 rounded-full glass text-[11px] text-white/35 hover:text-white/70 hover:border-white/10 transition-all duration-200">REST API</button>
+    <button onclick="quickPrompt('Create a full-stack AI chat application')" class="px-3 py-1.5 rounded-full glass text-[11px] text-white/35 hover:text-white/70 hover:border-white/10 transition-all duration-200">AI Chat App</button>
+    <button onclick="quickPrompt('Build an e-commerce store with cart and checkout')" class="px-3 py-1.5 rounded-full glass text-[11px] text-white/35 hover:text-white/70 hover:border-white/10 transition-all duration-200">E-Commerce</button>
+  </div>
+
+</div>
+</section>
+
+<!-- ═══════════════════ TEMPLATE GALLERY ═══════════════════ -->
+<section id="templates" class="relative px-6 pb-12 z-10">
+<div class="max-w-4xl mx-auto">
+
+  <div class="flex items-center justify-between mb-5 animate-fade-in">
+    <div><h2 class="text-base font-semibold text-white/70">Popular Templates</h2><p class="text-[11px] text-white/20 mt-0.5">Start with a pre-built blueprint</p></div>
+    <button onclick="document.getElementById('promptInput').focus()" class="text-[11px] text-brand-400 hover:text-brand-300 transition-colors">View all →</button>
+  </div>
+
+  <div class="bento-grid">
+    <div class="bento-card" onclick="quickPrompt('Create a SaaS admin dashboard with analytics, user management, and billing')">
+      <div class="bento-glow"></div>
+      <div class="relative z-10"><div class="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center mb-3"><i data-lucide="layout-dashboard" class="w-5 h-5 text-purple-400"></i></div>
+      <h3 class="text-sm font-semibold text-white/80 mb-1">SaaS Dashboard</h3><p class="text-[11px] text-white/25">Admin panel with analytics & user management</p>
+      <div class="flex gap-1.5 mt-3"><span class="text-[9px] px-2 py-0.5 rounded-full bg-white/5 text-white/30">Next.js</span><span class="text-[9px] px-2 py-0.5 rounded-full bg-white/5 text-white/30">Tailwind</span><span class="text-[9px] px-2 py-0.5 rounded-full bg-white/5 text-white/30">Prisma</span></div></div>
+    </div>
+    <div class="bento-card" onclick="quickPrompt('Create a blog CMS with Markdown support, tags, and RSS feed')">
+      <div class="bento-glow"></div>
+      <div class="relative z-10"><div class="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center mb-3"><i data-lucide="file-text" class="w-5 h-5 text-cyan-400"></i></div>
+      <h3 class="text-sm font-semibold text-white/80 mb-1">Blog CMS</h3><p class="text-[11px] text-white/25">Markdown blog with tags & RSS</p>
+      <div class="flex gap-1.5 mt-3"><span class="text-[9px] px-2 py-0.5 rounded-full bg-white/5 text-white/30">Astro</span><span class="text-[9px] px-2 py-0.5 rounded-full bg-white/5 text-white/30">MDX</span></div></div>
+    </div>
+    <div class="bento-card" onclick="quickPrompt('Build an AI chatbot agent with memory, tool calling, and streaming')">
+      <div class="bento-glow"></div>
+      <div class="relative z-10"><div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center mb-3"><i data-lucide="bot" class="w-5 h-5 text-emerald-400"></i></div>
+      <h3 class="text-sm font-semibold text-white/80 mb-1">AI Agent</h3><p class="text-[11px] text-white/25">Chatbot with memory & tool calling</p>
+      <div class="flex gap-1.5 mt-3"><span class="text-[9px] px-2 py-0.5 rounded-full bg-white/5 text-white/30">Python</span><span class="text-[9px] px-2 py-0.5 rounded-full bg-white/5 text-white/30">LangChain</span></div></div>
+    </div>
+    <div class="bento-card" onclick="quickPrompt('Create a full e-commerce platform with product catalog, cart, and Stripe checkout')">
+      <div class="bento-glow"></div>
+      <div class="relative z-10"><div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center mb-3"><i data-lucide="shopping-cart" class="w-5 h-5 text-amber-400"></i></div>
+      <h3 class="text-sm font-semibold text-white/80 mb-1">E-Commerce</h3><p class="text-[11px] text-white/25">Store with cart & Stripe checkout</p>
+      <div class="flex gap-1.5 mt-3"><span class="text-[9px] px-2 py-0.5 rounded-full bg-white/5 text-white/30">Next.js</span><span class="text-[9px] px-2 py-0.5 rounded-full bg-white/5 text-white/30">Stripe</span></div></div>
+    </div>
+    <div class="bento-card" onclick="quickPrompt('Build a CRM system with contact management, pipeline, and email integration')">
+      <div class="bento-glow"></div>
+      <div class="relative z-10"><div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center mb-3"><i data-lucide="users" class="w-5 h-5 text-blue-400"></i></div>
+      <h3 class="text-sm font-semibold text-white/80 mb-1">CRM System</h3><p class="text-[11px] text-white/25">Contact & pipeline management</p>
+      <div class="flex gap-1.5 mt-3"><span class="text-[9px] px-2 py-0.5 rounded-full bg-white/5 text-white/30">React</span><span class="text-[9px] px-2 py-0.5 rounded-full bg-white/5 text-white/30">Node.js</span></div></div>
+    </div>
+    <div class="bento-card" onclick="quickPrompt('Create a REST API with Express, TypeScript, PostgreSQL, and Swagger docs')">
+      <div class="bento-glow"></div>
+      <div class="relative z-10"><div class="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center mb-3"><i data-lucide="server" class="w-5 h-5 text-rose-400"></i></div>
+      <h3 class="text-sm font-semibold text-white/80 mb-1">REST API</h3><p class="text-[11px] text-white/25">TypeScript Express + PostgreSQL</p>
+      <div class="flex gap-1.5 mt-3"><span class="text-[9px] px-2 py-0.5 rounded-full bg-white/5 text-white/30">Express</span><span class="text-[9px] px-2 py-0.5 rounded-full bg-white/5 text-white/30">Postgres</span><span class="text-[9px] px-2 py-0.5 rounded-full bg-white/5 text-white/30">Swagger</span></div></div>
+    </div>
+  </div>
+
+</div>
+</section>
+
+<!-- ═══════════════════ MAIN CONTENT ═══════════════════ -->
+<section id="projects" class="relative px-6 pb-24 z-10">
+<div class="max-w-4xl mx-auto">
+
+  <!-- Section Header with Tabs -->
+  <div class="flex items-center justify-between mb-5 animate-fade-in">
+    <div class="flex items-center gap-6">
+      <h2 class="text-base font-semibold text-white/70 flex items-center gap-2">
+        <i data-lucide="folder-git-2" class="w-4 h-4 text-brand-500"></i> Projects
+        <span id="projectCount" class="text-white/20 text-xs font-normal"></span>
+      </h2>
+      <div class="hidden sm:flex items-center gap-4">
+        <button class="tab active text-[11px] pb-1 font-medium" onclick="filterProjects('all')" data-filter="all">All</button>
+        <button class="tab text-[11px] pb-1 font-medium" onclick="filterProjects('active')" data-filter="active">Active</button>
+        <button class="tab text-[11px] pb-1 font-medium" onclick="filterProjects('completed')" data-filter="completed">Completed</button>
+      </div>
+    </div>
+    <button onclick="refreshProjects()" class="text-[11px] text-white/30 hover:text-white/60 transition-colors flex items-center gap-1"><i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh</button>
+  </div>
+
+  <!-- Loading Skeleton -->
+  <div id="loadingSkeleton" style="display:none" class="space-y-3">
+    <div class="skeleton h-28 w-full"></div><div class="skeleton h-28 w-full"></div><div class="skeleton h-28 w-full"></div>
+  </div>
+
+  <!-- Empty State -->
+  <div id="emptyState" style="display:none" class="text-center py-20">
+    <div class="w-24 h-24 rounded-3xl glass flex items-center justify-center mx-auto mb-6 animate-float">
+      <i data-lucide="lightbulb" class="w-12 h-12 text-white/15"></i>
+    </div>
+    <h3 class="text-xl font-bold text-white/50 mb-2">Start building your first project</h3>
+    <p class="text-white/20 text-sm mb-6 max-w-sm mx-auto">Describe what you want to build above. AI takes care of the rest.</p>
+    <button onclick="document.getElementById('promptInput').focus()" class="gradient-bg text-white px-5 py-2.5 rounded-xl text-sm font-semibold inline-flex items-center gap-2 hover:scale-105 transition-transform"><i data-lucide="sparkles" class="w-4 h-4"></i> Create Project</button>
+  </div>
+
+  <!-- Error State -->
+  <div id="errorState" style="display:none" class="text-center py-20">
+    <div class="w-24 h-24 rounded-3xl glass flex items-center justify-center mx-auto mb-6 border-red-500/10"><i data-lucide="wifi-off" class="w-12 h-12 text-red-400/40"></i></div>
+    <h3 class="text-xl font-bold text-white/50 mb-2">Unable to connect</h3>
+    <p class="text-white/20 text-sm mb-6">Check that the API server is running.</p>
+    <button onclick="refreshProjects()" class="glass px-5 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:text-white transition-all">Retry</button>
+  </div>
+
+  <!-- Project Cards -->
+  <div id="projectList" class="space-y-3"></div>
+
+</div>
+</section>
+
+<!-- ═══════════════════ DETAIL MODAL ═══════════════════ -->
+<div id="detailModal" style="display:none" class="fixed inset-0 z-[100] flex items-center justify-center p-4" onclick="if(event.target===this)closeDetail()">
+<div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeDetail()"></div>
+<div id="modalContent" class="relative glass-strong rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden animate-scale-in shadow-2xl shadow-purple-500/5 gradient-border"></div>
+</div>
+
+<!-- ═══════════════════ JAVASCRIPT ═══════════════════ -->
+<script>
+// ─── State ───
+const projects = {};
+const polling = {};
+const POLL = 2500;
+let activeFilter = 'all';
+let todayTaskCount = 0;
+
+// ─── API ───
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(path, opts);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+// ─── Create Project ───
+async function createProject() {
+  const input = document.getElementById('promptInput');
+  const btn = document.getElementById('generateBtn');
+  const label = document.getElementById('btnLabel');
+  const task = input.value.trim();
+  if (!task) { input.focus(); return; }
+
+  btn.disabled = true; label.textContent = 'Creating...';
+  try {
+    const data = await api('POST', '/api/create-task', { task });
+    projects[data.taskId] = { id: data.taskId, description: task, state: 'pending', progress: 0, currentStep: null, downloadUrl: null, error: null, logs: [], createdAt: new Date().toISOString() };
+    input.value = ''; autoGrow(input);
+    todayTaskCount++;
+    document.getElementById('todayCount').textContent = todayTaskCount;
+    renderProjects();
+    document.getElementById('projects').scrollIntoView({ behavior: 'smooth' });
+    pollTask(data.taskId);
+    addTerminalEntry('info', 'Task created — entering queue');
+    addTerminalEntry('info', 'Planning project structure...');
+    toast('Project created', 'AI is analyzing your requirements...');
+  } catch (err) {
+    toast('Failed', err.message, 'error');
+  } finally {
+    btn.disabled = false; label.textContent = 'Generate';
+  }
+}
+
+// ─── Poll ───
+async function pollTask(taskId) {
+  if (polling[taskId]) return;
+  const poll = async () => {
+    try {
+      const data = await api('GET', `/api/get-task?id=${taskId}`);
+      if (data.id) {
+        const prev = projects[taskId]?.state;
+        projects[taskId] = { ...projects[taskId], ...data };
+        renderProjects();
+        // Terminal feed
+        if (data.state === 'planning' && prev !== 'planning') addTerminalEntry('info', 'Generating project plan...');
+        if (data.state === 'executing' && prev !== 'executing') addTerminalEntry('info', 'Writing source files...');
+        if (data.state === 'verifying' && prev !== 'verifying') addTerminalEntry('info', 'Running verification...');
+        if (data.state === 'success') { addTerminalEntry('success', '✓ Build complete — project ready'); delete polling[taskId]; toast('Complete!', 'Your project is ready.', 'success'); return; }
+        if (data.state === 'failed') { addTerminalEntry('error', '✗ Build failed — ' + (data.error || 'unknown error')); delete polling[taskId]; return; }
+        // Log entries
+        if (data.logs) {
+          const prevLen = (prev && projects[taskId]?.logs?.length) || 0;
+          data.logs.slice(prevLen).forEach(l => {
+            const type = l.toLowerCase().includes('error')||l.includes('❌')?'error':l.includes('✅')||l.includes('🎉')?'success':'info';
+            addTerminalEntry(type, l.replace(/^\[.*?\]\s*/, ''));
+          });
+        }
+      }
+    } catch (e) { /* retry */ }
+    polling[taskId] = setTimeout(poll, POLL);
+  };
+  polling[taskId] = setTimeout(poll, POLL);
+}
+
+// ─── Render Projects ───
+function renderProjects() {
+  const list = document.getElementById('projectList');
+  const empty = document.getElementById('emptyState');
+  const error = document.getElementById('errorState');
+  const count = document.getElementById('projectCount');
+  error.style.display = 'none';
+
+  let sorted = Object.values(projects).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  if (activeFilter === 'active') sorted = sorted.filter(p => p.state !== 'success' && p.state !== 'failed');
+  else if (activeFilter === 'completed') sorted = sorted.filter(p => p.state === 'success');
+
+  count.textContent = sorted.length ? `· ${sorted.length}` : '';
+
+  if (sorted.length === 0) { empty.style.display = 'block'; list.innerHTML = ''; lucide.createIcons(); return; }
+  empty.style.display = 'none';
+
+  list.innerHTML = sorted.map(p => projectCard(p)).join('');
+  lucide.createIcons();
+}
+
+function projectCard(p) {
+  const si = getState(p.state);
+  const isActive = p.state !== 'success' && p.state !== 'failed';
+  const timeAgo = getTimeAgo(p.createdAt);
+  const tags = inferTags(p.description);
+
+  return `
+  <div class="glass-card rounded-2xl p-5 cursor-pointer animate-fade-in" onclick="openDetail('${p.id}')">
+    <div class="flex items-start justify-between mb-3">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 mb-1">
+          <h3 class="text-white/85 font-semibold text-sm truncate">${esc(p.description||'Untitled').slice(0,70)}</h3>
+          <span class="shrink-0 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider ${si.bg} ${si.text} border ${si.border}">${p.state}</span>
+        </div>
+        <div class="flex items-center gap-1.5 flex-wrap">
+          ${tags.map(t=>`<span class="text-[9px] px-1.5 py-0.5 rounded-md bg-white/[0.03] text-white/25 font-medium">${t}</span>`).join('')}
+        </div>
+      </div>
+    </div>
+    ${isActive ? `
+    <div class="mb-2">
+      <div class="flex justify-between text-[10px] text-white/25 mb-1.5"><span>${esc(p.currentStep||'Queued...')}</span><span class="font-mono">${p.progress||0}%</span></div>
+      <div class="h-1.5 rounded-full bg-white/[0.04] overflow-hidden"><div class="h-full rounded-full progress-glow transition-all duration-700 ease-out" style="width:${p.progress||0}%"></div></div>
+    </div>`:''}
+    <div class="flex items-center justify-between mt-2">
+      <div class="flex items-center gap-2">
+        ${p.state==='success'?`<span class="text-emerald-400/70 text-[11px] flex items-center gap-1"><i data-lucide="circle-check" class="w-3 h-3"></i> Complete</span>`:''}
+        ${p.state==='failed'?`<span class="text-red-400/70 text-[11px] flex items-center gap-1"><i data-lucide="circle-x" class="w-3 h-3"></i> Failed</span>`:''}
+      </div>
+      <span class="text-[10px] text-white/15 font-mono">${timeAgo}</span>
+    </div>
+    ${p.state==='success'&&p.downloadUrl?`
+    <div class="flex items-center gap-2 mt-3 pt-3 border-t border-white/[0.03]">
+      <a href="${p.downloadUrl}" class="text-[11px] text-brand-400 hover:text-brand-300 flex items-center gap-1 font-medium transition-colors" onclick="event.stopPropagation()"><i data-lucide="download" class="w-3 h-3"></i> Download</a>
+      <button class="text-[11px] text-white/25 hover:text-white/50 flex items-center gap-1 transition-colors" onclick="event.stopPropagation();openDetail('${p.id}')"><i data-lucide="scroll-text" class="w-3 h-3"></i> Logs</button>
+    </div>`:''}
+  </div>`;
+}
+
+function inferTags(desc) {
+  if (!desc) return ['General'];
+  const d = desc.toLowerCase();
+  const tags = [];
+  if (d.includes('react')||d.includes('next')) tags.push('React');
+  if (d.includes('express')||d.includes('node')) tags.push('Node.js');
+  if (d.includes('tailwind')) tags.push('Tailwind');
+  if (d.includes('api')||d.includes('rest')) tags.push('API');
+  if (d.includes('postgres')||d.includes('sql')) tags.push('Postgres');
+  if (d.includes('ai')||d.includes('llm')||d.includes('chat')) tags.push('AI');
+  if (d.includes('dashboard')) tags.push('Dashboard');
+  if (d.includes('blog')||d.includes('cms')) tags.push('CMS');
+  if (tags.length === 0) tags.push('General');
+  return tags.slice(0, 4);
+}
+
+// ─── Detail Modal ───
+function openDetail(taskId) {
+  const p = projects[taskId]; if (!p) return;
+  const modal = document.getElementById('detailModal');
+  const content = document.getElementById('modalContent');
+  const si = getState(p.state);
+  const isActive = p.state !== 'success' && p.state !== 'failed';
+  content.innerHTML = `
+  <div class="p-6">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-base font-bold text-white/85 truncate pr-4">${esc(p.description||'Untitled').slice(0,100)}</h2>
+      <button onclick="closeDetail()" class="shrink-0 p-2 rounded-xl hover:bg-white/5 transition-all"><i data-lucide="x" class="w-5 h-5 text-white/30"></i></button>
+    </div>
+    <div class="flex flex-wrap gap-2 mb-5">
+      <span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold uppercase tracking-wider ${si.bg} ${si.text} border ${si.border}">${p.state}</span>
+      <span class="px-2.5 py-1 rounded-lg glass text-[10px] text-white/30 font-mono">${p.id}</span>
+    </div>
+    ${isActive?`<div class="mb-5"><div class="flex justify-between text-[10px] text-white/25 mb-2"><span>${esc(p.currentStep||'Processing...')}</span><span class="font-semibold text-white/50">${p.progress||0}%</span></div><div class="h-2 rounded-full bg-white/[0.04] overflow-hidden"><div class="h-full rounded-full progress-glow transition-all duration-700 ease-out" style="width:${p.progress||0}%"></div></div></div>`:''}
+    ${p.state==='success'&&p.downloadUrl?`<a href="${p.downloadUrl}" class="inline-flex items-center gap-2 gradient-bg text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25 mb-5"><i data-lucide="download" class="w-4 h-4"></i> Download ZIP</a>`:''}
+    ${p.error?`<div class="p-4 rounded-xl bg-red-500/[0.04] border border-red-500/10 text-red-400/70 text-[11px] mb-5">${esc(p.error)}</div>`:''}
+    ${p.logs&&p.logs.length>0?`<div class="terminal p-4 max-h-72" id="terminalDetail">${p.logs.map(l=>formatLogLine(l)).join('')}</div>`:''}
+  </div>`;
+  modal.style.display = 'flex';
+  lucide.createIcons();
+  setTimeout(()=>{const t=document.getElementById('terminalDetail');if(t)t.scrollTop=t.scrollHeight;},100);
+}
+
+function closeDetail() { document.getElementById('detailModal').style.display = 'none'; }
+
+// ─── Live Terminal ───
+function addTerminalEntry(type, msg) {
+  const area = document.getElementById('terminalArea');
+  if (!area) return;
+  const icons = { success: '●', error: '✖', info: '○', warn: '▲' };
+  const colors = { success: 't-success', error: 't-error', info: 't-info', warn: 't-warn' };
+  const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+  const entry = document.createElement('div');
+  entry.className = `terminal-entry ${colors[type]||'t-dim'} animate-fade-in`;
+  entry.innerHTML = `<span class="t-dim">${time}</span> <span>${icons[type]||'·'}</span> ${esc(msg)}`;
+  area.appendChild(entry);
+  area.scrollTop = area.scrollHeight;
+  // Keep max 100 entries
+  while (area.children.length > 100) area.firstChild.remove();
+}
+
+function formatLogLine(l) {
+  const lower = l.toLowerCase();
+  let cls = 't-info';
+  if (lower.includes('success')||lower.includes('✅')||lower.includes('🎉')||lower.includes('complete')) cls = 't-success';
+  else if (lower.includes('error')||lower.includes('❌')||lower.includes('fail')||lower.includes('💥')) cls = 't-error';
+  else if (lower.includes('warn')||lower.includes('⚠️')) cls = 't-warn';
+  return `<div class="${cls}">${esc(l)}</div>`;
+}
+
+// ─── Refresh ───
+async function refreshProjects() {
+  const skeleton = document.getElementById('loadingSkeleton');
+  skeleton.style.display = 'block';
+  try {
+    const data = await api('GET', '/api/get-task');
+    if (data.tasks) data.tasks.forEach(t => { projects[t.id] = { ...(projects[t.id]||{}), ...t }; if (t.state !== 'success' && t.state !== 'failed') pollTask(t.id); });
+    todayTaskCount = data.tasks?.filter(t => new Date(t.createdAt).toDateString() === new Date().toDateString()).length || todayTaskCount;
+    document.getElementById('todayCount').textContent = todayTaskCount;
+  } catch (e) {
+    document.getElementById('errorState').style.display = 'block';
+    document.getElementById('projectList').innerHTML = '';
+    document.getElementById('emptyState').style.display = 'none';
+  }
+  skeleton.style.display = 'none';
+  document.getElementById('errorState').style.display = 'none';
+  renderProjects();
+}
+
+// ─── Command Palette ───
+const CMD_ITEMS = [
+  { id:'new', icon:'sparkles', label:'Create Project', kbd:'⌘N', action:()=>{document.getElementById('promptInput').focus()} },
+  { id:'projects', icon:'folder-git-2', label:'View Projects', kbd:'⌘P', action:()=>{document.getElementById('projects').scrollIntoView({behavior:'smooth'})} },
+  { id:'templates', icon:'layout-template', label:'Browse Templates', action:()=>{document.getElementById('templates').scrollIntoView({behavior:'smooth'})} },
+  { id:'refresh', icon:'refresh-cw', label:'Refresh Projects', kbd:'⌘R', action:()=>{refreshProjects()} },
+  { id:'terminal', icon:'terminal', label:'Toggle Terminal', kbd:'⌘J', action:()=>{toggleTerminal()} },
+];
+
+function openCmd() {
+  document.getElementById('cmdBackdrop').classList.add('open');
+  document.getElementById('cmdInput').value = '';
+  document.getElementById('cmdInput').focus();
+  renderCmdItems(CMD_ITEMS);
+}
+
+function closeCmd() { document.getElementById('cmdBackdrop').classList.remove('open'); }
+
+function renderCmdItems(items) {
+  document.getElementById('cmdList').innerHTML = items.map((item,i) => `
+    <div class="cmd-item ${i===0?'active':''}" data-cmd="${item.id}" onclick="closeCmd();${item.action.toString().replace(/^\(\)\s*=>\s*\{/,'').replace(/\}$/,'')}">
+      <i data-lucide="${item.icon}" class="w-4 h-4 text-white/40"></i>
+      <span class="text-sm text-white/80 flex-1">${item.label}</span>
+      ${item.kbd?`<kbd>${item.kbd}</kbd>`:''}
+    </div>
+  `).join('');
+  lucide.createIcons();
+}
+
+function filterCmd() {
+  const q = document.getElementById('cmdInput').value.toLowerCase();
+  const filtered = CMD_ITEMS.filter(i => i.label.toLowerCase().includes(q));
+  renderCmdItems(filtered);
+}
+
+function handleCmdKey(e) {
+  if (e.key === 'Escape') { closeCmd(); return; }
+  if (e.key === 'Enter') {
+    const active = document.querySelector('.cmd-item.active');
+    if (active) { active.click(); closeCmd(); }
+  }
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    const items = document.querySelectorAll('.cmd-item');
+    const active = document.querySelector('.cmd-item.active');
+    const idx = Array.from(items).indexOf(active);
+    items.forEach(i => i.classList.remove('active'));
+    const next = e.key === 'ArrowDown' ? Math.min(idx + 1, items.length - 1) : Math.max(idx - 1, 0);
+    items[next]?.classList.add('active');
+  }
+}
+
+// ─── Terminal Toggle ───
+function toggleTerminal() {
+  const t = document.getElementById('terminalArea');
+  if (!t) return;
+  t.parentElement.style.display = t.parentElement.style.display === 'none' ? 'block' : 'none';
+}
+
+// ─── Filter ───
+function filterProjects(type) {
+  activeFilter = type;
+  document.querySelectorAll('[data-filter]').forEach(b => b.classList.toggle('active', b.dataset.filter === type));
+  renderProjects();
+}
+
+// ─── Tab Switch ───
+function switchTab(tab) {
+  document.querySelectorAll('[data-tab]').forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === tab);
+    t.style.color = t.dataset.tab === tab ? '#A855F7' : '';
+  });
+}
+
+// ─── Helpers ───
+function getState(s) {
+  const map = {
+    pending:{bg:'bg-white/5',text:'text-white/35',border:'border-white/5'},
+    planning:{bg:'bg-purple-500/10',text:'text-purple-400',border:'border-purple-500/20'},
+    executing:{bg:'bg-blue-500/10',text:'text-blue-400',border:'border-blue-500/20'},
+    verifying:{bg:'bg-cyan-500/10',text:'text-cyan-400',border:'border-cyan-500/20'},
+    fixing:{bg:'bg-amber-500/10',text:'text-amber-400',border:'border-amber-500/20'},
+    success:{bg:'bg-emerald-500/10',text:'text-emerald-400',border:'border-emerald-500/20'},
+    failed:{bg:'bg-red-500/10',text:'text-red-400',border:'border-red-500/20'},
+    running:{bg:'bg-blue-500/10',text:'text-blue-400',border:'border-blue-500/20'},
+  };
+  return map[s]||map.pending;
+}
+
+function getTimeAgo(d) { if(!d)return'';const s=Math.floor((Date.now()-new Date(d).getTime())/1000);if(s<60)return'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago'; }
+function esc(s) { if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML; }
+function autoGrow(el) { el.style.height='auto';el.style.height=Math.min(el.scrollHeight,180)+'px'; }
+function handlePromptKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();createProject();} }
+function quickPrompt(t) { document.getElementById('promptInput').value=t;autoGrow(document.getElementById('promptInput'));document.getElementById('hero').scrollIntoView({behavior:'smooth'});document.getElementById('promptInput').focus(); }
+
+// ─── Toast ───
+function toast(title, message, type = 'info') {
+  const container = document.getElementById('toasts');
+  const icons = { success: 'circle-check', error: 'circle-x', info: 'info' };
+  const borders = { success: 'border-emerald-500/20', error: 'border-red-500/20', info: 'border-white/10' };
+  const el = document.createElement('div');
+  el.className = `toast-enter glass-strong rounded-xl px-5 py-4 min-w-[300px] border ${borders[type]} shadow-2xl`;
+  el.innerHTML = `<div class="flex items-start gap-3"><i data-lucide="${icons[type]}" class="w-5 h-5 ${type==='success'?'text-emerald-400':type==='error'?'text-red-400':'text-brand-400'} shrink-0 mt-0.5"></i><div><div class="text-sm font-semibold text-white/85">${esc(title)}</div><div class="text-[11px] text-white/35 mt-0.5">${esc(message)}</div></div></div>`;
+  container.appendChild(el); lucide.createIcons();
+  setTimeout(() => { el.classList.add('toast-exit'); setTimeout(() => el.remove(), 250); }, 3500);
+}
+
+// ─── Stats Counter Animation ───
+function animateCounters() {
+  document.querySelectorAll('[data-count]').forEach(el => {
+    const target = parseFloat(el.dataset.count);
+    const isFloat = el.dataset.count.includes('.');
+    const duration = 2000;
+    const start = performance.now();
+    function update(now) {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = target * eased;
+      el.textContent = isFloat ? current.toFixed(1) + '%' : Math.floor(current).toLocaleString();
+      if (progress < 1) requestAnimationFrame(update);
+    }
+    requestAnimationFrame(update);
+  });
+}
+
+// ─── Init ───
+document.addEventListener('DOMContentLoaded', () => {
+  lucide.createIcons();
+  animateCounters();
+  refreshProjects();
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if ((e.metaKey||e.ctrlKey) && e.key === 'k') { e.preventDefault(); openCmd(); }
+  if ((e.metaKey||e.ctrlKey) && e.key === 'n') { e.preventDefault(); document.getElementById('promptInput').focus(); }
+  if (e.key === 'Escape') closeCmd();
+});
+</script>
+
+<!-- ─── LIVE TERMINAL (bottom bar) ─── -->
+<div class="fixed bottom-0 left-0 right-0 z-40" id="terminalBar">
+<div class="max-w-4xl mx-auto px-6 pb-3">
+  <div class="glass-strong rounded-2xl overflow-hidden gradient-border">
+    <div class="flex items-center justify-between px-4 py-2 border-b border-white/[0.03]">
+      <div class="flex items-center gap-2 text-[10px] text-white/25">
+        <i data-lucide="terminal" class="w-3 h-3"></i> Activity Feed
+      </div>
+      <button onclick="toggleTerminal()" class="text-white/20 hover:text-white/50 transition-colors"><i data-lucide="minimize-2" class="w-3 h-3"></i></button>
+    </div>
+    <div id="terminalArea" class="terminal px-4 py-2 max-h-32 overflow-y-auto text-[11px]" style="border:none;border-radius:0;">
+      <div class="t-dim">System ready — waiting for tasks...</div>
+    </div>
+  </div>
+</div>
+</div>
+
+</body>
+</html>

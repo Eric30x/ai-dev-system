@@ -1,8 +1,8 @@
 node_modules
-output
 workspaces
 downloads
 logs
+.queue
 .git
 .env
 *.log
