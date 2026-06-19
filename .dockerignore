@@ -1,0 +1,8 @@
+node_modules
+output
+workspaces
+downloads
+logs
+.git
+.env
+*.log

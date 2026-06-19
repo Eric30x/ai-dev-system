@@ -1,0 +1,15 @@
+{
+  "name": "todo-cli",
+  "version": "1.0.0",
+  "description": "CLI Todo List 工具",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "todo": "./index.js"
+  },
+  "keywords": ["todo", "cli"],
+  "author": "Your Name",
+  "license": "MIT"
+}

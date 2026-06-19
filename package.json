@@ -1,0 +1,32 @@
+{
+  "name": "ai-dev",
+  "version": "7.0.0",
+  "description": "AI 自动开发系统 — 输入任务描述，自动生成完整项目",
+  "main": "index.js",
+  "bin": {
+    "ai-dev": "bin/cli.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "server": "node server/index.js",
+    "docker:build": "docker build -t ai-dev .",
+    "docker:run": "docker run -p 3000:3000 --env-file .env ai-dev",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ai",
+    "claude",
+    "auto-dev"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.105.0",
+    "archiver": "^8.0.0",
+    "commander": "^15.0.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "fs-extra": "^11.3.5"
+  }
+}

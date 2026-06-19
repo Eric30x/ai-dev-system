@@ -1,0 +1,12 @@
+{
+  "name": "express-rest-api",
+  "version": "1.0.0",
+  "description": "简单的 Express.js REST API 项目",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
