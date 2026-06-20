@@ -47,9 +47,17 @@ loadRoute("/api/health", "./routes/health", "Health");
 loadRoute("/api", "./routes/tasks", "Tasks (create/get)");
 loadRoute("/api/download", "./routes/download", "Download");
 
+// ─── V10 工作区路由 ───
+loadRoute("/api/workspace", "./routes/workspace", "Workspace V10");
+
 // ─── 静态文件：Web UI ───
 const webDir = path.join(__dirname, "..", "web");
 app.use(express.static(webDir));
+
+// V10 Workspace 页面
+app.get("/workspace", (req, res) => {
+  res.sendFile(path.join(webDir, "workspace.html"));
+});
 
 // SPA fallback：所有非 API / 非静态文件请求返回 index.html
 app.use((req, res, next) => {

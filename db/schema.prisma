@@ -7,57 +7,64 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── V9 原有表（保留） ───
+
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
+  id            String         @id @default(cuid())
+  email         String         @unique
   passwordHash  String
   name          String?
-  plan          Plan      @default(FREE)
+  plan          Plan           @default(FREE)
   apiKeys       ApiKey[]
   projects      Project[]
   usage         Usage[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  conversations Conversation[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 }
 
 model ApiKey {
-  id        String   @id @default(cuid())
-  key       String   @unique
+  id        String    @id @default(cuid())
+  key       String    @unique
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
   name      String?
   lastUsed  DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 }
 
 model Project {
-  id            String        @id @default(cuid())
+  id            String         @id @default(cuid())
   userId        String
-  user          User          @relation(fields: [userId], references: [id])
+  user          User           @relation(fields: [userId], references: [id])
   name          String
   description   String
-  state         ProjectState  @default(PENDING)
-  progress      Int           @default(0)
+  state         ProjectState   @default(PENDING)
+  progress      Int            @default(0)
   currentStep   String?
   downloadUrl   String?
   error         String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   logs          LogEntry[]
   tasks         Task[]
+  workspace     Workspace?
+  conversations Conversation[]
+  artifacts     Artifact[]
+  deployments   Deployment[]
 }
 
 model Task {
-  id            String    @id @default(cuid())
-  projectId     String
-  project       Project   @relation(fields: [projectId], references: [id])
-  type          String
-  status        String    @default("pending")
-  result        Json?
-  attempts      Int       @default(0)
-  maxAttempts   Int       @default(3)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  type        String
+  status      String   @default("pending")
+  result      Json?
+  attempts    Int      @default(0)
+  maxAttempts Int      @default(3)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model LogEntry {
@@ -77,6 +84,66 @@ model Usage {
   amount    Int
   createdAt DateTime @default(now())
 }
+
+// ─── V10 新增表 ───
+
+model Workspace {
+  id        String   @id @default(cuid())
+  projectId String   @unique
+  project   Project  @relation(fields: [projectId], references: [id])
+  fileTree  Json     @default("{}") // { path: content }
+  metadata  Json     @default("{}") // { techStack, dependencies, uiStyle }
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Conversation {
+  id        String    @id @default(cuid())
+  projectId String
+  project   Project   @relation(fields: [projectId], references: [id])
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  title     String?
+  messages  Message[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  role           String // "user" | "assistant" | "system"
+  content        String
+  metadata       Json? // { toolCalls, fileChanges }
+  createdAt      DateTime     @default(now())
+}
+
+model Artifact {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+  version   Int      @default(1)
+  type      String   @default("zip") // "zip" | "readme" | "source" | "log"
+  path      String // 文件路径
+  size      Int      @default(0)
+  metadata  Json? // { commitMessage, tags }
+  createdAt DateTime @default(now())
+}
+
+model Deployment {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+  platform  String   @default("vercel") // "vercel" | "railway" | "docker"
+  status    String   @default("pending") // "pending"|"deploying"|"live"|"failed"
+  url       String?
+  log       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─── 枚举 ───
 
 enum Plan {
   FREE

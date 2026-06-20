@@ -383,7 +383,7 @@ function projectCard(p) {
   const tags = inferTags(p.description);
 
   return `
-  <div class="glass-card rounded-2xl p-5 cursor-pointer animate-fade-in" onclick="openDetail('${p.id}')">
+  <div class="glass-card rounded-2xl p-5 cursor-pointer animate-fade-in" onclick="location.href='/workspace?id=${p.id}'" style="cursor:pointer"">
     <div class="flex items-start justify-between mb-3">
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 mb-1">

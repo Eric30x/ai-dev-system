@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Workspace — AI Dev Platform V10</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{colors:{brand:{400:'#A855F7',500:'#8B5CF6',600:'#7C3AED'},accent:{400:'#06B6D4',500:'#3B82F6'},surface:{950:'#020408',900:'#0B0D14',800:'#11131F',700:'#161825'}}}}}</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter','SF Pro Display',-apple-system,sans-serif;background:#020408;color:#E2E8F0;height:100vh;overflow:hidden}
+.glass{background:rgba(17,19,31,.65);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.05)}
+.glass-strong{background:rgba(17,19,31,.85);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border:1px solid rgba(255,255,255,.07)}
+.gradient-text{background:linear-gradient(135deg,#A855F7,#8B5CF6 30%,#06B6D4 70%,#3B82F6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.gradient-bg{background:linear-gradient(135deg,#7C3AED,#8B5CF6 50%,#06B6D4)}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:2px}
+/* Terminal */
+.terminal{font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.7;background:#060810;overflow-y:auto}
+.terminal .t-s{color:#34D399}.terminal .t-e{color:#F87171}.terminal .t-i{color:#818CF8}.terminal .t-w{color:#FBBF24}.terminal .t-d{color:#4B5563}
+/* File tree */
+.tree-item{padding:3px 12px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:6px;border-radius:4px;margin:0 4px;transition:all .12s;white-space:nowrap}
+.tree-item:hover{background:rgba(255,255,255,.04)}.tree-item.active{background:rgba(139,92,246,.15);color:#A855F7}
+.tree-item.dir{color:#818CF8}.tree-item.file{color:#9CA3AF}
+.tree-children{padding-left:14px}
+/* Code editor */
+#editorArea{font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.7;tab-size:2;background:#0B0D14;color:#E2E8F0;border:none;outline:none;resize:none;width:100%;height:100%;padding:16px;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:break-word}
+/* Chat */
+.chat-msg{padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.6;max-width:100%}
+.chat-user{background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.15)}.chat-ai{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05)}
+/* Animations */
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}.animate-fade{animation:fadeIn .3s ease-out}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}.animate-pulse-slow{animation:pulse 2s ease-in-out infinite}
+</style>
+</head>
+<body>
+
+<!-- ─── TOP BAR ─── -->
+<div class="glass-strong h-12 flex items-center justify-between px-4 shrink-0 z-10">
+<div class="flex items-center gap-3">
+  <a href="/" class="flex items-center gap-2 text-sm font-bold"><span class="gradient-text">AI Dev</span><span class="text-white/40 text-[10px]">V10</span></a>
+  <span class="text-white/10">|</span>
+  <span id="projectName" class="text-white/60 text-xs truncate max-w-[200px]">Loading...</span>
+</div>
+<div class="flex items-center gap-2">
+  <span id="projectState" class="text-[10px] px-2 py-0.5 rounded-md bg-white/5 text-white/30 uppercase"></span>
+  <button onclick="refreshFiles()" class="p-1.5 rounded-lg hover:bg-white/5 text-white/30 hover:text-white/60 transition-all" title="Refresh files"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
+  <a id="downloadBtn" href="#" class="p-1.5 rounded-lg hover:bg-white/5 text-white/30 hover:text-white/60 transition-all hidden" title="Download ZIP"><i data-lucide="download" class="w-3.5 h-3.5"></i></a>
+  <a href="/" class="p-1.5 rounded-lg hover:bg-white/5 text-white/30 hover:text-white/60 transition-all" title="Back to Dashboard"><i data-lucide="home" class="w-3.5 h-3.5"></i></a>
+</div>
+</div>
+
+<!-- ─── MAIN LAYOUT ─── -->
+<div class="flex" style="height:calc(100vh - 48px)">
+
+<!-- ─── LEFT: File Tree ─── -->
+<div class="glass border-r-0 w-56 shrink-0 flex flex-col overflow-hidden">
+  <div class="px-4 py-3 text-[10px] text-white/25 uppercase tracking-wider font-semibold border-b border-white/[0.03] flex items-center justify-between">
+    Files
+    <span id="fileCount" class="text-white/15"></span>
+  </div>
+  <div id="fileTree" class="flex-1 overflow-y-auto py-2"></div>
+</div>
+
+<!-- ─── CENTER: Editor + Terminal ─── -->
+<div class="flex-1 flex flex-col min-w-0">
+  <!-- Editor Header -->
+  <div class="glass-strong h-9 flex items-center px-4 gap-3 shrink-0 border-t-0">
+    <i data-lucide="file-code" class="w-3.5 h-3.5 text-brand-400"></i>
+    <span id="currentFile" class="text-xs text-white/50 font-mono">Select a file</span>
+    <span id="saveIndicator" class="text-[10px] text-emerald-400/70 hidden ml-auto">Saved</span>
+    <button onclick="saveFile()" class="text-[10px] px-2 py-0.5 rounded-md bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all">Save (Ctrl+S)</button>
+  </div>
+  <!-- Editor -->
+  <div class="flex-1 overflow-hidden relative">
+    <textarea id="editorArea" placeholder="Select a file from the tree..." disabled></textarea>
+  </div>
+  <!-- Terminal -->
+  <div class="border-t border-white/[0.03]">
+    <div class="glass-strong h-8 flex items-center px-4 gap-2 shrink-0">
+      <i data-lucide="terminal" class="w-3 h-3 text-white/25"></i>
+      <span class="text-[10px] text-white/25 font-medium">Activity Log</span>
+      <span id="sseStatus" class="w-1.5 h-1.5 rounded-full bg-white/15 ml-auto" title="SSE"></span>
+    </div>
+    <div id="terminal" class="terminal h-32 px-4 py-2 overflow-y-auto">
+      <div class="t-d">Connected — waiting for events...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── RIGHT: AI Chat ─── -->
+<div class="glass border-l-0 w-80 shrink-0 flex flex-col overflow-hidden">
+  <div class="px-4 py-3 text-[10px] text-white/25 uppercase tracking-wider font-semibold border-b border-white/[0.03]">AI Chat</div>
+  <div id="chatMessages" class="flex-1 overflow-y-auto p-3 space-y-3">
+    <div class="t-d text-[11px] text-center py-4">Ask AI to modify your project</div>
+  </div>
+  <div class="p-3 border-t border-white/[0.03]">
+    <div class="flex gap-2">
+      <input id="chatInput" class="flex-1 bg-white/[0.03] border border-white/[0.06] rounded-lg px-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-brand-500/30 transition-all" placeholder="Ask AI to modify code..." onkeydown="if(event.key==='Enter')sendChat()">
+      <button onclick="sendChat()" class="gradient-bg text-white px-3 py-2 rounded-lg text-xs font-semibold hover:scale-105 transition-transform shrink-0"><i data-lucide="send" class="w-3.5 h-3.5"></i></button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+// ═══ State ═══
+const params = new URLSearchParams(location.search);
+const PROJECT_ID = params.get('id') || '';
+let fileTree = {};
+let currentFilePath = null;
+let currentFileContent = '';
+let conversationId = null;
+
+// ═══ Init ═══
+(async function init() {
+  if (!PROJECT_ID) { document.body.innerHTML = '<div class="flex items-center justify-center h-screen text-white/30">Missing project ID</div>'; return; }
+  lucide.createIcons();
+  await loadProject();
+  await refreshFiles();
+  connectSSE();
+  await loadChat();
+})();
+
+async function loadProject() {
+  try {
+    const res = await fetch(`/api/workspace/${PROJECT_ID}`);
+    const data = await res.json();
+    if (data.project) {
+      document.getElementById('projectName').textContent = data.project.description?.slice(0,60) || data.project.name;
+      document.getElementById('projectState').textContent = data.project.state;
+      if (data.project.downloadUrl) {
+        const btn = document.getElementById('downloadBtn');
+        btn.href = data.project.downloadUrl;
+        btn.classList.remove('hidden');
+      }
+    }
+  } catch(e) { console.error(e); }
+}
+
+// ═══ File Tree ═══
+async function refreshFiles() {
+  try {
+    const res = await fetch(`/api/workspace/${PROJECT_ID}/files`);
+    const data = await res.json();
+    fileTree = data.tree || {};
+    renderFileTree();
+    document.getElementById('fileCount').textContent = Object.keys(fileTree).length ? `(${Object.keys(fileTree).length})` : '';
+  } catch(e) {
+    document.getElementById('fileTree').innerHTML = '<div class="text-white/20 text-[11px] p-4">No files yet — task may still be running</div>';
+  }
+}
+
+function renderFileTree() {
+  const container = document.getElementById('fileTree');
+  const entries = Object.entries(fileTree);
+  if (entries.length === 0) {
+    container.innerHTML = '<div class="text-white/20 text-[11px] p-4">Empty project</div>';
+    return;
+  }
+
+  // Build tree structure
+  const root = {};
+  for (const [p, info] of entries) {
+    const parts = p.split('/');
+    let node = root;
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      if (i === parts.length - 1) {
+        node[part] = { ...info, _path: p, _isFile: true };
+      } else {
+        if (!node[part]) node[part] = { _isDir: true, _path: parts.slice(0, i+1).join('/') };
+        node = node[part];
+      }
+    }
+  }
+
+  container.innerHTML = renderTreeNodes(root);
+  lucide.createIcons();
+}
+
+function renderTreeNodes(nodes, level = 0) {
+  const keys = Object.keys(nodes).sort((a, b) => {
+    const aDir = nodes[a]._isDir, bDir = nodes[b]._isDir;
+    if (aDir && !bDir) return -1;
+    if (!aDir && bDir) return 1;
+    return a.localeCompare(b);
+  });
+
+  return keys.map(name => {
+    const node = nodes[name];
+    const isDir = node._isDir;
+    const isFile = node._isFile;
+    const filePath = node._path;
+    const cls = isDir ? 'dir' : 'file';
+    const icon = isDir ? 'folder' : fileIcon(name);
+
+    if (isDir) {
+      return `
+        <div>
+          <div class="tree-item ${cls}" onclick="toggleDir(this)" data-path="${filePath}">
+            <i data-lucide="chevron-right" class="w-3 h-3 tree-chevron"></i>
+            <i data-lucide="${icon}" class="w-3.5 h-3.5"></i>
+            <span class="truncate">${name}</span>
+          </div>
+          <div class="tree-children hidden">${renderTreeNodes(node, level + 1)}</div>
+        </div>`;
+    }
+    return `
+      <div class="tree-item ${cls} ${currentFilePath===filePath?'active':''}" onclick="openFile('${filePath}')" data-path="${filePath}">
+        <span class="w-3"></span>
+        <i data-lucide="${icon}" class="w-3.5 h-3.5"></i>
+        <span class="truncate">${name}</span>
+      </div>`;
+  }).join('');
+}
+
+function toggleDir(el) {
+  const children = el.nextElementSibling;
+  children.classList.toggle('hidden');
+  const chevron = el.querySelector('.tree-chevron');
+  if (chevron) chevron.style.transform = children.classList.contains('hidden') ? '' : 'rotate(90deg)';
+}
+
+function fileIcon(name) {
+  if (name.endsWith('.js')) return 'file-code';
+  if (name.endsWith('.ts')) return 'file-type';
+  if (name.endsWith('.json')) return 'file-json';
+  if (name.endsWith('.md')) return 'file-text';
+  if (name.endsWith('.html')) return 'file-code';
+  if (name.endsWith('.css')) return 'palette';
+  if (name.endsWith('.py')) return 'terminal';
+  if (name === 'package.json') return 'package';
+  return 'file';
+}
+
+// ═══ Open File ═══
+async function openFile(filePath) {
+  try {
+    const res = await fetch(`/api/workspace/${PROJECT_ID}/file?path=${encodeURIComponent(filePath)}`);
+    const data = await res.json();
+    if (data.content !== undefined) {
+      currentFilePath = filePath;
+      currentFileContent = data.content;
+      document.getElementById('currentFile').textContent = filePath;
+      const editor = document.getElementById('editorArea');
+      editor.value = data.content;
+      editor.disabled = false;
+      editor.focus();
+      document.getElementById('saveIndicator').classList.add('hidden');
+      renderFileTree();
+      lucide.createIcons();
+    }
+  } catch(e) { terminalAdd('t-e', 'Failed to open: ' + filePath); }
+}
+
+async function saveFile() {
+  if (!currentFilePath) return;
+  const content = document.getElementById('editorArea').value;
+  try {
+    await fetch(`/api/workspace/${PROJECT_ID}/files`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ path: currentFilePath, content }),
+    });
+    currentFileContent = content;
+    document.getElementById('saveIndicator').classList.remove('hidden');
+    terminalAdd('t-s', '✓ Saved: ' + currentFilePath);
+    setTimeout(() => document.getElementById('saveIndicator').classList.add('hidden'), 2000);
+  } catch(e) { terminalAdd('t-e', 'Save failed: ' + e.message); }
+}
+
+// ═══ SSE ═══
+function connectSSE() {
+  const evtSource = new EventSource(`/api/workspace/${PROJECT_ID}/stream`);
+  const status = document.getElementById('sseStatus');
+
+  evtSource.addEventListener('connected', () => { status.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 ml-auto'; });
+  evtSource.addEventListener('log', e => {
+    const d = JSON.parse(e.data);
+    const cls = d.level === 'error' ? 't-e' : d.level === 'warn' ? 't-w' : d.level === 'info' ? 't-i' : 't-s';
+    terminalAdd(cls, d.message);
+  });
+  evtSource.addEventListener('progress', e => {
+    const d = JSON.parse(e.data);
+    document.getElementById('projectState').textContent = d.state;
+    if (d.state === 'success') refreshFiles();
+  });
+  evtSource.addEventListener('fileChange', e => {
+    terminalAdd('t-i', '📝 File changed: ' + JSON.parse(e.data).path);
+    refreshFiles();
+  });
+  evtSource.onerror = () => { status.className = 'w-1.5 h-1.5 rounded-full bg-red-400 ml-auto'; };
+}
+
+function terminalAdd(cls, msg) {
+  const t = document.getElementById('terminal');
+  const time = new Date().toLocaleTimeString('en-US', {hour12:false});
+  t.innerHTML += `<div class="${cls}"><span class="t-d">${time}</span> ${esc(msg)}</div>`;
+  t.scrollTop = t.scrollHeight;
+  if (t.children.length > 200) t.firstChild.remove();
+}
+
+// ═══ Chat ═══
+async function loadChat() {
+  try {
+    const res = await fetch(`/api/workspace/${PROJECT_ID}/chat`);
+    const data = await res.json();
+    conversationId = data.conversationId;
+    const container = document.getElementById('chatMessages');
+    if (data.messages && data.messages.length > 0) {
+      container.innerHTML = data.messages.map(m =>
+        `<div class="chat-msg ${m.role==='user'?'chat-user':'chat-ai'} animate-fade"><div class="text-[10px] text-white/20 mb-1">${m.role==='user'?'You':'AI'}</div><div class="text-white/70 text-xs whitespace-pre-wrap">${esc(m.content).slice(0,500)}</div></div>`
+      ).join('');
+    }
+    container.scrollTop = container.scrollHeight;
+  } catch(e) { /* chat not available */ }
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+
+  const container = document.getElementById('chatMessages');
+  container.innerHTML += `<div class="chat-msg chat-user animate-fade"><div class="text-[10px] text-white/20 mb-1">You</div><div class="text-white/70 text-xs">${esc(msg)}</div></div>`;
+  container.innerHTML += `<div class="chat-msg chat-ai animate-fade"><div class="text-[10px] text-white/20 mb-1">AI</div><div class="text-white/40 text-xs animate-pulse-slow">Thinking...</div></div>`;
+  container.scrollTop = container.scrollHeight;
+
+  try {
+    const res = await fetch(`/api/workspace/${PROJECT_ID}/chat`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ message: msg, userId: 'system' }),
+    });
+    const data = await res.json();
+    container.lastChild.innerHTML = `<div class="text-[10px] text-white/20 mb-1">AI</div><div class="text-white/70 text-xs whitespace-pre-wrap">${esc(data.reply?.content||'').slice(0,800)}</div>`;
+    container.scrollTop = container.scrollHeight;
+    refreshFiles();
+  } catch(e) {
+    container.lastChild.innerHTML = `<div class="text-[10px] text-white/20 mb-1">AI</div><div class="text-red-400/70 text-xs">Error: ${esc(e.message)}</div>`;
+  }
+}
+
+// ═══ Utils ═══
+function esc(s) { if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML; }
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey||e.metaKey) && e.key === 's') { e.preventDefault(); saveFile(); }
+});
+</script>
+</body>
+</html>
