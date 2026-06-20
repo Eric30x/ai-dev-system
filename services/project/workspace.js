@@ -71,9 +71,9 @@ async function getFileTree(projectId) {
  * 读取文件内容
  */
 async function readFile(projectId, filePath) {
-  const fullPath = path.join(config.WORKSPACE_DIR, projectId, filePath);
-  // 安全检查
-  if (!fullPath.startsWith(path.resolve(config.WORKSPACE_DIR))) return null;
+  const baseDir = path.resolve(config.WORKSPACE_DIR);
+  const fullPath = path.resolve(baseDir, projectId, filePath);
+  if (!fullPath.startsWith(baseDir)) return null;
   if (!fs.pathExistsSync(fullPath)) return null;
   return fs.readFileSync(fullPath, "utf-8");
 }
@@ -82,8 +82,9 @@ async function readFile(projectId, filePath) {
  * 写入文件
  */
 async function writeFile(projectId, filePath, content) {
-  const fullPath = path.join(config.WORKSPACE_DIR, projectId, filePath);
-  if (!fullPath.startsWith(path.resolve(config.WORKSPACE_DIR))) {
+  const baseDir = path.resolve(config.WORKSPACE_DIR);
+  const fullPath = path.resolve(baseDir, projectId, filePath);
+  if (!fullPath.startsWith(baseDir)) {
     throw new Error("路径穿越不被允许");
   }
   await fs.ensureDir(path.dirname(fullPath));

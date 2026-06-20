@@ -403,18 +403,61 @@ async function sendChat() {
   const inp=document.getElementById('chatInput');
   const msg=inp.value.trim(); if(!msg) return; inp.value='';
   const box=document.getElementById('chatMessages');
+
+  // User message
   box.innerHTML+=`<div class="chat-msg chat-user animate-fade"><div class="text-[9px] text-white/20 mb-1">You</div><div class="text-white/70 text-[11px]">${escHtml(msg)}</div></div>`;
-  box.innerHTML+=`<div class="chat-msg chat-ai animate-fade"><div class="text-[9px] text-white/20 mb-1">AI</div><div class="text-white/40 text-[11px]"><span class="spin inline-block mr-1">◌</span>Thinking...</div></div>`;
+
+  // Thinking indicator
+  const thinkId='think-'+Date.now();
+  box.innerHTML+=`<div class="chat-msg chat-ai animate-fade" id="${thinkId}"><div class="text-[9px] text-white/20 mb-1">Agent</div><div class="text-white/40 text-[11px]"><span class="spin inline-block mr-1">◌</span>Analyzing project & generating changes...</div></div>`;
   box.scrollTop=box.scrollHeight;
+
   try {
-    const res=await fetch(`/api/workspace/${PROJECT_ID}/chat`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,userId:'system'})});
+    const res=await fetch(`/api/workspace/${PROJECT_ID}/agent`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({message:msg})
+    });
     const j=await res.json();
-    conversationId=j.conversationId;
-    box.lastChild.innerHTML=`<div class="text-[9px] text-white/20 mb-1">AI</div><div class="text-white/70 text-[11px] whitespace-pre-wrap">${escHtml(j.reply?.content||'(no response)').slice(0,800)}</div>`;
+    const think=document.getElementById(thinkId);
+    if(!think) return;
+
+    // Build the agent response card
+    let html=`<div class="text-[9px] text-white/20 mb-1">Agent</div>`;
+
+    // Summary
+    html+=`<div class="text-white/75 text-[11px] font-semibold mb-2">${escHtml(j.summary||'Done.')}</div>`;
+
+    // Logs
+    if(j.logs&&j.logs.length){
+      html+=`<div class="text-[10px] text-white/30 space-y-0.5 mb-2">`;
+      j.logs.forEach(l=>{
+        const c=l.startsWith('✅')?'text-emerald-400':l.startsWith('❌')||l.startsWith('🚫')?'text-red-400':l.startsWith('⚠️')?'text-amber-400':'text-white/35';
+        html+=`<div class="${c}">${escHtml(l)}</div>`;
+      });
+      html+=`</div>`;
+    }
+
+    // Modified files
+    if(j.modifiedFiles&&j.modifiedFiles.length){
+      html+=`<div class="flex flex-wrap gap-1 mt-1">`;
+      j.modifiedFiles.forEach(f=>{
+        html+=`<span class="text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 cursor-pointer hover:bg-emerald-500/20 transition-all" onclick="openFile('${f.replace(/'/g,"\\'")}')" title="Open ${escHtml(f)}">📄 ${escHtml(f.split('/').pop())}</span>`;
+      });
+      html+=`</div>`;
+    }
+
+    think.innerHTML=html;
     box.scrollTop=box.scrollHeight;
-    refreshFileTree();
+
+    // Refresh file tree if files were changed
+    if(j.modifiedFiles&&j.modifiedFiles.length>0){
+      terminalAdd('t-s',`✓ Agent modified ${j.modifiedFiles.length} file(s)`);
+      setTimeout(refreshFileTree,800);
+    }
   } catch(e){
-    box.lastChild.innerHTML=`<div class="text-[9px] text-white/20 mb-1">AI</div><div class="text-red-400/70 text-[11px]">Error: ${escHtml(e.message)}</div>`;
+    const think=document.getElementById(thinkId);
+    if(think) think.innerHTML=`<div class="text-[9px] text-white/20 mb-1">Agent</div><div class="text-red-400/70 text-[11px]">Error: ${escHtml(e.message)}</div>`;
   }
 }
 

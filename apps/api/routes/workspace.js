@@ -5,6 +5,7 @@
 const { Router } = require("express");
 const workspace = require("../../../services/project/workspace");
 const chatService = require("../../../services/project/chat");
+const agentService = require("../../../services/project/agent");
 const sse = require("../../../services/project/sse");
 const { getPrisma } = require("../../../db/client");
 
@@ -87,6 +88,27 @@ router.post("/:id/chat", async (req, res) => {
     const conv = await chatService.getOrCreateConversation(req.params.id, userId || "system");
     const reply = await chatService.sendMessage(conv.id, req.params.id, userId || "system", message);
     res.json({ conversationId: conv.id, reply });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ═══ Project Agent V10.2 ═══
+router.post("/:id/agent", async (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message || typeof message !== "string" || message.trim().length === 0) {
+      return res.status(400).json({ error: "请提供 message" });
+    }
+
+    const result = await agentService.runAgent(req.params.id, message.trim());
+
+    // 推送文件变更通知
+    for (const fp of result.modifiedFiles) {
+      sse.pushFileChange(req.params.id, "agent-update", fp, "");
+    }
+
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
