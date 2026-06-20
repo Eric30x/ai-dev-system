@@ -496,7 +496,7 @@ async function openVersions() {
         </div>
         <div class="flex gap-1.5 mb-3 flex-wrap">${v.items.map(i=>`<span class="text-[9px] px-1.5 py-0.5 rounded-md ${i.type==='source'?'bg-blue-500/10 text-blue-400':i.type==='zip'?'bg-emerald-500/10 text-emerald-400':i.type==='readme'?'bg-purple-500/10 text-purple-400':'bg-white/5 text-white/30'}">${i.type} (${(i.size/1024).toFixed(1)}KB)</span>`).join('')}</div>
         <div class="flex gap-2">
-          ${v.items.filter(i=>i.type==='zip'||i.type==='source').map(i=>`<a href="/api/projects/${PROJECT_ID}/artifacts/${i.id}/download" class="text-[10px] px-2 py-1 rounded-lg bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all">📥 ${i.type==='zip'?'Zip':'Source'}</a>`).join('')}
+          ${v.items.filter(i=>i.type==='zip'||i.type==='source').map(i=>`<a href="/api/projects/${PROJECT_ID}/artifact-download?artifactId=${i.id}" class="text-[10px] px-2 py-1 rounded-lg bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all">📥 ${i.type==='zip'?'Zip':'Source'}</a>`).join('')}
           <button onclick="rollbackTo(${v.version})" class="text-[10px] px-2 py-1 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-all">⏪ Rollback</button>
         </div>
       </div>

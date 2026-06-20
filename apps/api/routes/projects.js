@@ -80,14 +80,34 @@ router.get("/:id/artifacts", requireAuth, async (req, res) => {
   }
 });
 
-// 下载指定 Artifact
-router.get("/:id/artifacts/:artifactId/download", requireAuth, async (req, res) => {
+// 下载指定 Artifact（?artifactId=xxx 方式）
+router.get("/:id/artifact-download", requireAuth, async (req, res) => {
   try {
-    const artifact = await artifactService.getArtifact(req.params.artifactId);
+    const artifactId = req.query.artifactId;
+    if (!artifactId) return res.status(400).json({ error: "请提供 artifactId 参数" });
+    const artifact = await artifactService.getArtifact(artifactId);
     if (!artifact) return res.status(404).json({ error: "Artifact 不存在" });
-    const filePath = artifactService.getArtifactPath(artifact);
-    if (!filePath) return res.status(404).json({ error: "文件丢失" });
-    res.download(filePath);
+
+    const pathMod = require("path");
+    const fsMod = require("fs");
+
+    // 从 artifact.path 提取文件名，重建绝对路径
+    const fileName = pathMod.basename((artifact.path || "").replace(/\\/g, "/"));
+    const projectRoot = pathMod.resolve(__dirname, "../../..");
+    const absPath = pathMod.join(projectRoot, "workspaces", req.params.id, ".artifacts", fileName);
+
+    if (!fsMod.existsSync(absPath)) {
+      return res.status(404).json({ error: "文件不存在" });
+    }
+
+    // Express 5 res.download 在 Windows 点目录路径有问题，手动 pipe
+    const stat = fsMod.statSync(absPath);
+    res.writeHead(200, {
+      "Content-Type": "application/zip",
+      "Content-Length": stat.size,
+      "Content-Disposition": "attachment; filename=\"" + fileName + "\"",
+    });
+    fsMod.createReadStream(absPath).pipe(res);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

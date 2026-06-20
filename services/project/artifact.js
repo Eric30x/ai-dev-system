@@ -79,7 +79,7 @@ async function saveArtifact(projectId, options = {}) {
   const metaPath = path.join(artifactDir, `v${version}-metadata.json`);
   fs.writeJsonSync(metaPath, metadata, { spaces: 2 });
 
-  // ─── 写入数据库 ───
+  // ─── 写入数据库（统一用正斜杠） ───
   const records = [];
   for (const art of artifacts) {
     const record = await prisma.artifact.create({
@@ -87,7 +87,7 @@ async function saveArtifact(projectId, options = {}) {
         projectId,
         version,
         type: art.type,
-        path: art.path,
+        path: (art.path || "").replace(/\\/g, "/"),
         size: art.size || 0,
         metadata,
       },
@@ -142,7 +142,15 @@ async function getArtifact(artifactId) {
  */
 function getArtifactPath(artifact) {
   if (!artifact || !artifact.path) return null;
-  if (fs.pathExistsSync(artifact.path)) return artifact.path;
+  // 尝试多个路径解析策略
+  const candidates = [
+    artifact.path,                                    // 原始路径
+    path.resolve(artifact.path),                       // 绝对路径解析
+    path.join(config.WORKSPACE_DIR, "..", artifact.path), // 相对于工作区父目录
+  ];
+  for (const p of candidates) {
+    if (fs.pathExistsSync(p)) return p;
+  }
   return null;
 }
 

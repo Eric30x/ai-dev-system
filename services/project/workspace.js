@@ -39,7 +39,9 @@ async function syncFileTree(projectId) {
         walk(path.join(dir, entry.name), relPath);
       } else {
         try {
-          const content = fs.readFileSync(path.join(dir, entry.name), "utf-8");
+          const raw = fs.readFileSync(path.join(dir, entry.name), "utf-8");
+          // 清理不可打印字符（防止 PostgreSQL JSONB 报错）
+          const content = raw.replace(/\x00/g, "").replace(/[\uD800-\uDFFF]/g, "");
           tree[relPath] = { type: "file", content, size: Buffer.byteLength(content, "utf-8") };
         } catch (e) {
           tree[relPath] = { type: "file", content: "", size: 0 };

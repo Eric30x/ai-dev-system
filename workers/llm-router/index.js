@@ -9,12 +9,13 @@ const config = require("../../shared/config");
 
 const PROVIDERS = [
   {
+    // DeepSeek via Anthropic-compatible API (Mimo proxy or DeepSeek official)
     name: "deepseek",
-    check: () => !!config.ANTHROPIC_API_KEY,
+    check: () => !!(process.env.DEEPSEEK_API_KEY || config.ANTHROPIC_API_KEY),
     call: async (system, user, opts = {}) => {
       const Anthropic = require("@anthropic-ai/sdk");
       const client = new Anthropic({
-        apiKey: config.ANTHROPIC_API_KEY,
+        apiKey: process.env.DEEPSEEK_API_KEY || config.ANTHROPIC_API_KEY,
         baseURL: config.ANTHROPIC_BASE_URL || "https://api.deepseek.com/anthropic",
         timeout: opts.timeout || 60000,
       });
@@ -30,8 +31,9 @@ const PROVIDERS = [
     },
   },
   {
+    // Claude via Anthropic official API
     name: "claude",
-    check: () => !!process.env.CLAUDE_API_KEY,
+    check: () => !!(process.env.CLAUDE_API_KEY),
     call: async (system, user, opts = {}) => {
       const Anthropic = require("@anthropic-ai/sdk");
       const client = new Anthropic({
@@ -50,12 +52,13 @@ const PROVIDERS = [
     },
   },
   {
+    // OpenAI / GPT
     name: "openai",
-    check: () => !!config.OPENAI_API_KEY,
+    check: () => !!(process.env.OPENAI_API_KEY || config.OPENAI_API_KEY),
     call: async (system, user, opts = {}) => {
       const OpenAI = require("openai");
       const client = new OpenAI({
-        apiKey: config.OPENAI_API_KEY,
+        apiKey: process.env.OPENAI_API_KEY || config.OPENAI_API_KEY,
         timeout: opts.timeout || 60000,
       });
       const res = await client.chat.completions.create({
@@ -71,15 +74,20 @@ const PROVIDERS = [
     },
   },
   {
+    // Google Gemini
     name: "gemini",
-    check: () => !!process.env.GEMINI_API_KEY,
+    check: () => !!(process.env.GEMINI_API_KEY),
     call: async (system, user, opts = {}) => {
-      const Gemini = require("@google/generative-ai");
-      const genAI = new Gemini.GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: opts.model || "gemini-2.0-flash" });
-      const prompt = system ? `${system}\n\nUser: ${user}` : user;
-      const result = await model.generateContent(prompt);
-      return result.response.text().trim();
+      try {
+        const Gemini = require("@google/generative-ai");
+        const genAI = new Gemini.GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: opts.model || "gemini-2.0-flash" });
+        const prompt = system ? `${system}\n\nUser: ${user}` : user;
+        const result = await model.generateContent(prompt);
+        return result.response.text().trim();
+      } catch (err) {
+        throw new Error(`Gemini: ${err.message}`);
+      }
     },
   },
 ];
