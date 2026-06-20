@@ -15,6 +15,7 @@ const { createWorker } = require("../../services/queue/bullmq");
 const projectService = require("../../services/project/service");
 const billingService = require("../../services/billing/stripe");
 const workspaceService = require("../../services/project/workspace");
+const artifactService = require("../../services/project/artifact");
 const sse = require("../../services/project/sse");
 const planner = require("../planner");
 const executor = require("../executor");
@@ -148,7 +149,17 @@ async function executeProjectV10(project, outputDir) {
   emit("info", "📦 保存 Artifact...");
 
   try {
-    await artifactService.saveArtifact(projectId, "source", outputDir);
+    // 收集日志
+    const prisma = require("../../db/client").getPrisma();
+    const allLogs = await prisma.logEntry.findMany({
+      where: { projectId },
+      orderBy: { createdAt: "asc" },
+    });
+    const result = await artifactService.saveArtifact(projectId, {
+      logs: allLogs,
+      metadata: { taskType: "generate", planSteps: plan?.length || 0 },
+    });
+    emit("info", `📦 Artifact v${result.version} 已保存 (${result.artifacts.length} 个文件)`);
     await workspaceService.syncFileTree(projectId);
     emit("info", "✅ 文件树已同步");
   } catch (e) {
@@ -281,24 +292,6 @@ const fixer = {
   },
 };
 
-// ═══ Artifact Service (inline) ═══
-const artifactService = {
-  async saveArtifact(projectId, type, sourceDir) {
-    const prisma = require("../../db/client").getPrisma();
-    const version = (await prisma.artifact.count({ where: { projectId } })) + 1;
-
-    await prisma.artifact.create({
-      data: {
-        projectId,
-        version,
-        type,
-        path: sourceDir,
-        size: getDirSize(sourceDir),
-      },
-    });
-  },
-};
-
 // ═══ Utils ═══
 function findFiles(dir, ext) {
   const results = [];
@@ -313,21 +306,6 @@ function findFiles(dir, ext) {
   }
   walk(dir);
   return results;
-}
-
-function getDirSize(dir) {
-  let size = 0;
-  function walk(d) {
-    if (!fs.pathExistsSync(d)) return;
-    for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
-      if (entry.name === "node_modules") continue;
-      const full = path.join(d, entry.name);
-      if (entry.isDirectory()) { walk(full); }
-      else { try { size += fs.statSync(full).size; } catch (e) {} }
-    }
-  }
-  walk(dir);
-  return size;
 }
 
 // 启动

@@ -50,6 +50,7 @@ body{font-family:'Inter','SF Pro Display',-apple-system,sans-serif;background:#0
 </div>
 <div class="flex items-center gap-1">
   <span id="saveStatus" class="text-[10px] text-emerald-400/60 mr-2 hidden">● Saved</span>
+  <button onclick="openVersions()" class="p-1.5 rounded-lg hover:bg-white/5 text-white/30 hover:text-white/60 transition-all text-[10px] font-medium" title="Version History">Versions</button>
   <button onclick="saveCurrentFile()" class="p-1.5 rounded-lg hover:bg-white/5 text-white/40 hover:text-white transition-all text-[10px] font-medium" title="Save (Ctrl+S)">Save</button>
   <button onclick="refreshFileTree()" class="p-1.5 rounded-lg hover:bg-white/5 text-white/30 hover:text-white/60 transition-all" title="Refresh files"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
   <a id="downloadBtn" href="#" class="p-1.5 rounded-lg hover:bg-white/5 text-white/30 hover:text-white/60 transition-all hidden" title="Download ZIP"><i data-lucide="download" class="w-3.5 h-3.5"></i></a>
@@ -477,6 +478,61 @@ function escHtml(s) { if(!s)return'';const d=document.createElement('div');d.tex
 window.addEventListener('beforeunload',()=>{
   if(monacoEditor) monacoEditor.dispose();
 });
+
+// ═══ Version History ═══
+async function openVersions() {
+  const modal=document.getElementById('versionsModal');
+  const list=document.getElementById('versionsList');
+  modal.style.display='flex'; list.innerHTML='<div class="text-white/25 text-xs p-4 text-center"><span class="spin inline-block mr-1">◌</span>Loading versions...</div>';
+  try {
+    const res=await fetch(`/api/projects/${PROJECT_ID}/artifacts`);
+    const j=await res.json();
+    if(!j.versions||!j.versions.length){ list.innerHTML='<div class="text-white/25 text-xs p-4 text-center">No versions yet — run a task first</div>'; return; }
+    list.innerHTML=j.versions.map(v=>`
+      <div class="glass-card rounded-xl p-4 mb-3">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-bold text-white/80">v${v.version}</span>
+          <span class="text-[10px] text-white/25">${new Date(v.createdAt).toLocaleString()}</span>
+        </div>
+        <div class="flex gap-1.5 mb-3 flex-wrap">${v.items.map(i=>`<span class="text-[9px] px-1.5 py-0.5 rounded-md ${i.type==='source'?'bg-blue-500/10 text-blue-400':i.type==='zip'?'bg-emerald-500/10 text-emerald-400':i.type==='readme'?'bg-purple-500/10 text-purple-400':'bg-white/5 text-white/30'}">${i.type} (${(i.size/1024).toFixed(1)}KB)</span>`).join('')}</div>
+        <div class="flex gap-2">
+          ${v.items.filter(i=>i.type==='zip'||i.type==='source').map(i=>`<a href="/api/projects/${PROJECT_ID}/artifacts/${i.id}/download" class="text-[10px] px-2 py-1 rounded-lg bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all">📥 ${i.type==='zip'?'Zip':'Source'}</a>`).join('')}
+          <button onclick="rollbackTo(${v.version})" class="text-[10px] px-2 py-1 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-all">⏪ Rollback</button>
+        </div>
+      </div>
+    `).join('');
+    lucide.createIcons();
+  } catch(e) { list.innerHTML=`<div class="text-red-400/70 text-xs p-4">Error: ${escHtml(e.message)}</div>`; }
+}
+
+async function rollbackTo(version) {
+  if(!confirm(`Rollback to version ${version}? Current files will be backed up.`)) return;
+  try {
+    const res=await fetch(`/api/projects/${PROJECT_ID}/rollback`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({version})});
+    const j=await res.json();
+    terminalAdd('t-s',`✓ ${j.message}`);
+    closeVersions();
+    refreshFileTree();
+    toast('Rollback complete',j.message,'success');
+  } catch(e) { terminalAdd('t-e','Rollback: '+e.message); }
+}
+
+function closeVersions() { document.getElementById('versionsModal').style.display='none'; }
+
+function toast(title,msg,type){ /**/ }
 </script>
+
+<!-- Versions Modal -->
+<div id="versionsModal" style="display:none" class="fixed inset-0 z-[200] flex items-center justify-center p-4" onclick="if(event.target===this)closeVersions()">
+<div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeVersions()"></div>
+<div class="relative glass-strong rounded-2xl w-full max-w-lg max-h-[75vh] overflow-hidden animate-scale-in shadow-2xl">
+  <div class="p-5 border-b border-white/[0.04] flex items-center justify-between">
+    <h2 class="text-sm font-bold text-white/80">Version History</h2>
+    <button onclick="closeVersions()" class="p-1.5 rounded-lg hover:bg-white/5"><i data-lucide="x" class="w-4 h-4 text-white/30"></i></button>
+  </div>
+  <div id="versionsList" class="p-4 overflow-y-auto max-h-[60vh]"></div>
+</div>
+</div>
+
 </body>
 </html>

@@ -7,6 +7,7 @@ const { requireAuth } = require("../../../services/auth/middleware");
 const projectService = require("../../../services/project/service");
 const billingService = require("../../../services/billing/stripe");
 const { addTask } = require("../../../services/queue/bullmq");
+const artifactService = require("../../../services/project/artifact");
 const path = require("path");
 const fs = require("fs");
 const config = require("../../../shared/config");
@@ -65,6 +66,55 @@ router.get("/:id/download", requireAuth, async (req, res) => {
   if (!fs.existsSync(zipPath)) return res.status(404).json({ error: "文件不存在" });
 
   res.download(zipPath, `${project.name}.zip`);
+});
+
+// ═══ V10.4 Artifact 版本管理 ═══
+
+// 列出所有版本
+router.get("/:id/artifacts", requireAuth, async (req, res) => {
+  try {
+    const versions = await artifactService.listArtifacts(req.params.id);
+    res.json({ versions });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 下载指定 Artifact
+router.get("/:id/artifacts/:artifactId/download", requireAuth, async (req, res) => {
+  try {
+    const artifact = await artifactService.getArtifact(req.params.artifactId);
+    if (!artifact) return res.status(404).json({ error: "Artifact 不存在" });
+    const filePath = artifactService.getArtifactPath(artifact);
+    if (!filePath) return res.status(404).json({ error: "文件丢失" });
+    res.download(filePath);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 回滚到指定版本
+router.post("/:id/rollback", requireAuth, async (req, res) => {
+  try {
+    const { version } = req.body;
+    if (!version) return res.status(400).json({ error: "请提供 version" });
+    const result = await artifactService.rollback(req.params.id, parseInt(version));
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 版本比较
+router.get("/:id/artifacts/compare", requireAuth, async (req, res) => {
+  try {
+    const { v1, v2 } = req.query;
+    if (!v1 || !v2) return res.status(400).json({ error: "请提供 v1 和 v2 参数" });
+    const diff = await artifactService.compareVersions(req.params.id, parseInt(v1), parseInt(v2));
+    res.json(diff);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;
