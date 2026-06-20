@@ -18,6 +18,7 @@ const workspaceService = require("../../services/project/workspace");
 const sse = require("../../services/project/sse");
 const planner = require("../planner");
 const executor = require("../executor");
+const { aiFix } = require("../fixer");
 const config = require("../../shared/config");
 const { PROJECT_STATES } = require("../../shared/types");
 const { zipProject } = require("../../utils/zipper");
@@ -105,15 +106,28 @@ async function executeProjectV10(project, outputDir) {
     emit("info", "✅ 验证通过");
   }
 
-  // ═══ Phase 4: Fix (3 rounds max) ═══
+  // ═══ Phase 4: AI Fix (3 rounds max) ═══
   let fixNeeded = !verifyResult.passed;
   for (let round = 1; round <= config.MAX_FIX_ROUNDS && fixNeeded; round++) {
-    await phase("FIXING", 60 + round * 10, `修复第 ${round} 轮...`, projectId);
-    emit("info", `🔧 Fixer 第 ${round}/${config.MAX_FIX_ROUNDS} 轮...`);
+    await phase("FIXING", 60 + round * 10, `AI 修复第 ${round} 轮...`, projectId);
+    emit("info", `🤖 AI Fixer 第 ${round}/${config.MAX_FIX_ROUNDS} 轮...`);
 
     const fixResult = await fixer.fix(outputDir, verifyResult.issues, plan, results);
+
+    // 记录 AI 诊断
+    if (fixResult.diagnosis) {
+      emit("info", `🔎 诊断: ${fixResult.diagnosis}`);
+    }
+    // 记录详细步骤
+    if (fixResult.details) {
+      for (const d of fixResult.details) {
+        const level = d.startsWith("✅") ? "info" : d.startsWith("❌") ? "error" : "info";
+        emit(level, d);
+      }
+    }
+
     if (fixResult.fixed) {
-      emit("info", `✅ 修复成功 (${fixResult.changes} 处改动)`);
+      emit("info", `✅ AI 修复成功 (${fixResult.changes} 处改动)`);
       // 重新验证
       const reVerify = await verifier.verify(outputDir);
       fixNeeded = !reVerify.passed;
@@ -124,7 +138,7 @@ async function executeProjectV10(project, outputDir) {
         emit("info", "✅ 所有问题已修复");
       }
     } else {
-      emit("warn", "⚠️ Fixer 无法自动修复，跳过");
+      emit("warn", "⚠️ AI Fixer 无法自动修复，跳过本轮");
       break;
     }
   }
@@ -232,55 +246,38 @@ const verifier = {
   },
 };
 
-// ═══ Fixer Agent ═══
+// ═══ AI Fixer V10.3 — LLM 驱动修复 ═══
 const fixer = {
   async fix(outputDir, issues, originalPlan, execResults) {
-    let changes = 0;
+    // 收集失败步骤详情
+    const failedSteps = (execResults || [])
+      .filter(r => !r.success)
+      .map(r => {
+        const step = originalPlan?.[r.step - 1];
+        return {
+          step: r.step,
+          description: step?.description || `Step ${r.step}`,
+          error: r.error || "未知错误",
+        };
+      });
 
-    for (const issue of issues) {
-      if (issue.includes("缺少 start 脚本")) {
-        try {
-          const pkgPath = path.join(outputDir, "package.json");
-          const pkg = fs.readJsonSync(pkgPath);
-          pkg.scripts = pkg.scripts || {};
-          pkg.scripts.start = pkg.scripts.start || "node server.js";
-          fs.writeJsonSync(pkgPath, pkg, { spaces: 2 });
-          changes++;
-        } catch (e) { /* ignore */ }
-      }
+    // 从原始计划推断任务描述
+    const taskDesc = originalPlan?.map(s => s.description).filter(Boolean).join(" → ") || "项目生成";
 
-      if (issue.includes("npm install 失败")) {
-        const fix = executor.safeExec("npm install --legacy-peer-deps 2>&1", outputDir, 120000);
-        if (fix.success) changes++;
-      }
+    // 调用 AI Fixer
+    const result = await aiFix(outputDir, issues || [], failedSteps, taskDesc);
 
-      if (issue.includes("缺少入口文件")) {
-        const pkgPath = path.join(outputDir, "package.json");
-        if (fs.pathExistsSync(pkgPath)) {
-          try {
-            const pkg = fs.readJsonSync(pkgPath);
-            const main = pkg.main || "server.js";
-            const mainPath = path.join(outputDir, main);
-            if (!fs.pathExistsSync(mainPath)) {
-              fs.writeFileSync(mainPath,
-                `const express = require('express');\nconst app = express();\nconst port = process.env.PORT || 3000;\n\napp.get('/', (req, res) => res.send('OK'));\n\napp.listen(port, () => console.log('Server running on port ' + port));\n`
-              );
-              changes++;
-            }
-          } catch (e) { /* ignore */ }
-        }
-      }
-
-      if (issue.includes("缺少依赖")) {
-        const dep = issue.match(/'(.*?)'/)?.[1];
-        if (dep) {
-          const fix = executor.safeExec(`npm install ${dep}`, outputDir, 60000);
-          if (fix.success) changes++;
-        }
-      }
+    // 将 AI Fixer 的详细日志写入项目日志
+    for (const detail of result.details || []) {
+      console.log(`  🔧 ${detail}`);
     }
 
-    return { fixed: changes > 0, changes };
+    return {
+      fixed: result.fixed,
+      changes: result.changes || 0,
+      details: result.details,
+      diagnosis: result.diagnosis,
+    };
   },
 };
 
