@@ -180,8 +180,9 @@ async function verifyProject(outputDir) {
     }
   }
 
-  // 尝试启动
+  // 尝试启动（使用随机端口避免冲突）
   const entry = entryFiles.find((f) => fs.pathExistsSync(path.join(outputDir, f)));
+  const VERIFY_PORT = 15000 + Math.floor(Math.random() * 5000);
   const cmd = hasPkg ? "npm start" : `node ${entry}`;
 
   return new Promise((resolve) => {
@@ -191,6 +192,7 @@ async function verifyProject(outputDir) {
       shell: true,
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
+      env: { ...process.env, PORT: String(VERIFY_PORT) },
     });
 
     let stdout = "";
@@ -199,6 +201,16 @@ async function verifyProject(outputDir) {
 
     proc.stdout.on("data", (d) => { stdout += d; });
     proc.stderr.on("data", (d) => { stderr += d; });
+
+    const killProc = () => {
+      try {
+        if (process.platform === "win32") {
+          require("child_process").execSync(`taskkill //F //PID ${proc.pid} //T 2>nul`, { stdio: "ignore" });
+        } else {
+          proc.kill("SIGKILL");
+        }
+      } catch (e) { /* already dead */ }
+    };
 
     proc.on("exit", () => {
       if (resolved) return;
@@ -215,7 +227,7 @@ async function verifyProject(outputDir) {
     setTimeout(() => {
       if (resolved) return;
       resolved = true;
-      proc.kill("SIGTERM");
+      killProc();
 
       const combined = (stdout + stderr).toLowerCase();
       const success = ["listening", "server started", "running on", "http://localhost"]
