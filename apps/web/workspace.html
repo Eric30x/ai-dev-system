@@ -3,14 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Workspace — AI Dev Platform V10</title>
+<title>Workspace — AI Dev Platform V10.1</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-<script>tailwind.config={darkMode:'class',theme:{extend:{colors:{brand:{400:'#A855F7',500:'#8B5CF6',600:'#7C3AED'},accent:{400:'#06B6D4',500:'#3B82F6'},surface:{950:'#020408',900:'#0B0D14',800:'#11131F',700:'#161825'}}}}}</script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{colors:{brand:{400:'#A855F7',500:'#8B5CF6',600:'#7C3AED'},surface:{950:'#020408',900:'#0B0D14',800:'#11131F',700:'#161825'}}}}}</script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter','SF Pro Display',-apple-system,sans-serif;background:#020408;color:#E2E8F0;height:100vh;overflow:hidden}
 .glass{background:rgba(17,19,31,.65);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.05)}
@@ -26,333 +24,415 @@ body{font-family:'Inter','SF Pro Display',-apple-system,sans-serif;background:#0
 .tree-item:hover{background:rgba(255,255,255,.04)}.tree-item.active{background:rgba(139,92,246,.15);color:#A855F7}
 .tree-item.dir{color:#818CF8}.tree-item.file{color:#9CA3AF}
 .tree-children{padding-left:14px}
-/* Code editor */
-#editorArea{font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.7;tab-size:2;background:#0B0D14;color:#E2E8F0;border:none;outline:none;resize:none;width:100%;height:100%;padding:16px;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:break-word}
+/* Tabs */
+.editor-tab{padding:6px 14px;font-size:11px;cursor:pointer;border-right:1px solid rgba(255,255,255,.04);display:flex;align-items:center;gap:6px;transition:all .15s;white-space:nowrap}
+.editor-tab:hover{background:rgba(255,255,255,.03)}.editor-tab.active{background:rgba(139,92,246,.08);color:#A855F7;border-bottom:1.5px solid #A855F7}
+.editor-tab .tab-close{opacity:0;padding:2px;border-radius:3px;transition:all .15s}.editor-tab:hover .tab-close{opacity:1}.tab-close:hover{background:rgba(255,255,255,.1)}
 /* Chat */
-.chat-msg{padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.6;max-width:100%}
+.chat-msg{padding:10px 14px;border-radius:12px;font-size:12px;line-height:1.6;max-width:100%}
 .chat-user{background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.15)}.chat-ai{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05)}
-/* Animations */
+/* Monaco container */
+#monacoContainer{width:100%;height:100%}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}.animate-fade{animation:fadeIn .3s ease-out}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}.animate-pulse-slow{animation:pulse 2s ease-in-out infinite}
+.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
 
 <!-- ─── TOP BAR ─── -->
-<div class="glass-strong h-12 flex items-center justify-between px-4 shrink-0 z-10">
+<div class="glass-strong h-11 flex items-center justify-between px-4 shrink-0 z-10">
 <div class="flex items-center gap-3">
-  <a href="/" class="flex items-center gap-2 text-sm font-bold"><span class="gradient-text">AI Dev</span><span class="text-white/40 text-[10px]">V10</span></a>
+  <a href="/" class="flex items-center gap-2 text-sm font-bold"><span class="gradient-text">AI Dev</span><span class="text-white/40 text-[10px]">V10.1</span></a>
   <span class="text-white/10">|</span>
-  <span id="projectName" class="text-white/60 text-xs truncate max-w-[200px]">Loading...</span>
-</div>
-<div class="flex items-center gap-2">
+  <span id="projectName" class="text-white/60 text-xs truncate max-w-[220px]">Loading...</span>
   <span id="projectState" class="text-[10px] px-2 py-0.5 rounded-md bg-white/5 text-white/30 uppercase"></span>
-  <button onclick="refreshFiles()" class="p-1.5 rounded-lg hover:bg-white/5 text-white/30 hover:text-white/60 transition-all" title="Refresh files"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
+</div>
+<div class="flex items-center gap-1">
+  <span id="saveStatus" class="text-[10px] text-emerald-400/60 mr-2 hidden">● Saved</span>
+  <button onclick="saveCurrentFile()" class="p-1.5 rounded-lg hover:bg-white/5 text-white/40 hover:text-white transition-all text-[10px] font-medium" title="Save (Ctrl+S)">Save</button>
+  <button onclick="refreshFileTree()" class="p-1.5 rounded-lg hover:bg-white/5 text-white/30 hover:text-white/60 transition-all" title="Refresh files"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
   <a id="downloadBtn" href="#" class="p-1.5 rounded-lg hover:bg-white/5 text-white/30 hover:text-white/60 transition-all hidden" title="Download ZIP"><i data-lucide="download" class="w-3.5 h-3.5"></i></a>
-  <a href="/" class="p-1.5 rounded-lg hover:bg-white/5 text-white/30 hover:text-white/60 transition-all" title="Back to Dashboard"><i data-lucide="home" class="w-3.5 h-3.5"></i></a>
+  <a href="/" class="p-1.5 rounded-lg hover:bg-white/5 text-white/30 hover:text-white/60 transition-all" title="Dashboard"><i data-lucide="home" class="w-3.5 h-3.5"></i></a>
 </div>
 </div>
 
 <!-- ─── MAIN LAYOUT ─── -->
-<div class="flex" style="height:calc(100vh - 48px)">
+<div class="flex" style="height:calc(100vh - 44px)">
 
-<!-- ─── LEFT: File Tree ─── -->
+<!-- LEFT: File Tree -->
 <div class="glass border-r-0 w-56 shrink-0 flex flex-col overflow-hidden">
-  <div class="px-4 py-3 text-[10px] text-white/25 uppercase tracking-wider font-semibold border-b border-white/[0.03] flex items-center justify-between">
-    Files
-    <span id="fileCount" class="text-white/15"></span>
+  <div class="px-4 py-2.5 text-[10px] text-white/25 uppercase tracking-wider font-semibold border-b border-white/[0.03] flex items-center justify-between">
+    Files <span id="fileCount" class="text-white/15"></span>
   </div>
-  <div id="fileTree" class="flex-1 overflow-y-auto py-2"></div>
+  <div id="fileTree" class="flex-1 overflow-y-auto py-1.5"></div>
 </div>
 
-<!-- ─── CENTER: Editor + Terminal ─── -->
+<!-- CENTER: Editor Area -->
 <div class="flex-1 flex flex-col min-w-0">
-  <!-- Editor Header -->
-  <div class="glass-strong h-9 flex items-center px-4 gap-3 shrink-0 border-t-0">
-    <i data-lucide="file-code" class="w-3.5 h-3.5 text-brand-400"></i>
-    <span id="currentFile" class="text-xs text-white/50 font-mono">Select a file</span>
-    <span id="saveIndicator" class="text-[10px] text-emerald-400/70 hidden ml-auto">Saved</span>
-    <button onclick="saveFile()" class="text-[10px] px-2 py-0.5 rounded-md bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all">Save (Ctrl+S)</button>
+  <!-- Tabs bar -->
+  <div id="tabBar" class="glass-strong h-9 flex items-center shrink-0 overflow-x-auto border-t-0" style="scrollbar-width:none">
+    <div id="tabWelcome" class="editor-tab active text-white/30">Welcome</div>
   </div>
-  <!-- Editor -->
-  <div class="flex-1 overflow-hidden relative">
-    <textarea id="editorArea" placeholder="Select a file from the tree..." disabled></textarea>
-  </div>
+  <!-- Monaco Editor -->
+  <div class="flex-1 overflow-hidden relative" id="monacoContainer"></div>
   <!-- Terminal -->
   <div class="border-t border-white/[0.03]">
-    <div class="glass-strong h-8 flex items-center px-4 gap-2 shrink-0">
+    <div class="glass-strong h-7 flex items-center px-4 gap-2 shrink-0">
       <i data-lucide="terminal" class="w-3 h-3 text-white/25"></i>
       <span class="text-[10px] text-white/25 font-medium">Activity Log</span>
-      <span id="sseStatus" class="w-1.5 h-1.5 rounded-full bg-white/15 ml-auto" title="SSE"></span>
+      <span id="sseStatus" class="w-1.5 h-1.5 rounded-full bg-white/15 ml-auto" title="SSE status"></span>
+      <button onclick="document.getElementById('terminalBody').classList.toggle('h-32');document.getElementById('terminalBody').classList.toggle('h-56')" class="text-white/20 hover:text-white/40 text-[10px]">⤢</button>
     </div>
-    <div id="terminal" class="terminal h-32 px-4 py-2 overflow-y-auto">
+    <div id="terminalBody" class="terminal h-32 px-4 py-2 overflow-y-auto">
       <div class="t-d">Connected — waiting for events...</div>
     </div>
   </div>
 </div>
 
-<!-- ─── RIGHT: AI Chat ─── -->
-<div class="glass border-l-0 w-80 shrink-0 flex flex-col overflow-hidden">
-  <div class="px-4 py-3 text-[10px] text-white/25 uppercase tracking-wider font-semibold border-b border-white/[0.03]">AI Chat</div>
+<!-- RIGHT: AI Chat -->
+<div class="glass border-l-0 w-72 shrink-0 flex flex-col overflow-hidden">
+  <div class="px-4 py-2.5 text-[10px] text-white/25 uppercase tracking-wider font-semibold border-b border-white/[0.03] flex items-center justify-between">
+    AI Chat
+    <button onclick="document.getElementById('chatMessages').innerHTML='<div class=\'t-d text-[11px] text-center py-8\'>Ask AI to modify your project</div>'" class="text-white/20 hover:text-white/40 text-[10px]">Clear</button>
+  </div>
   <div id="chatMessages" class="flex-1 overflow-y-auto p-3 space-y-3">
-    <div class="t-d text-[11px] text-center py-4">Ask AI to modify your project</div>
+    <div class="t-d text-[11px] text-center py-8">Ask AI to modify your project</div>
   </div>
   <div class="p-3 border-t border-white/[0.03]">
-    <div class="flex gap-2">
-      <input id="chatInput" class="flex-1 bg-white/[0.03] border border-white/[0.06] rounded-lg px-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-brand-500/30 transition-all" placeholder="Ask AI to modify code..." onkeydown="if(event.key==='Enter')sendChat()">
+    <div class="flex gap-1.5">
+      <input id="chatInput" class="flex-1 bg-white/[0.03] border border-white/[0.06] rounded-lg px-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-brand-500/30 transition-all" placeholder="Ask AI to modify code..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}">
       <button onclick="sendChat()" class="gradient-bg text-white px-3 py-2 rounded-lg text-xs font-semibold hover:scale-105 transition-transform shrink-0"><i data-lucide="send" class="w-3.5 h-3.5"></i></button>
     </div>
+    <div class="text-[9px] text-white/15 mt-1.5 text-center">Shift+Enter for new line</div>
   </div>
 </div>
 
 </div>
 
+<!-- ═══════════════ MONACO LOADER ═══════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.50.0/min/vs/loader.js"></script>
 <script>
-// ═══ State ═══
+// ─── State ───
 const params = new URLSearchParams(location.search);
 const PROJECT_ID = params.get('id') || '';
+let monacoEditor = null;
 let fileTree = {};
-let currentFilePath = null;
-let currentFileContent = '';
-let conversationId = null;
+let openTabs = {};          // { filePath: { content, dirty, model } }
+let activeFilePath = null;
 
-// ═══ Init ═══
+// ─── Init ───
 (async function init() {
-  if (!PROJECT_ID) { document.body.innerHTML = '<div class="flex items-center justify-center h-screen text-white/30">Missing project ID</div>'; return; }
+  if (!PROJECT_ID) { document.body.innerHTML = '<div class="flex items-center justify-center h-screen text-white/30 text-lg">Missing ?id= parameter</div>'; return; }
   lucide.createIcons();
   await loadProject();
-  await refreshFiles();
+  await refreshFileTree();
   connectSSE();
   await loadChat();
+
+  // Init Monaco
+  require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.50.0/min/vs' }});
+  require(['vs/editor/editor.main'], function() {
+    monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({ noSemanticValidation: true, noSyntaxValidation: false });
+    monaco.languages.typescript.javascriptDefaults.setCompilerOptions({ target: monaco.languages.typescript.ScriptTarget.ESNext, allowNonTsExtensions: true, moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs });
+
+    monacoEditor = monaco.editor.create(document.getElementById('monacoContainer'), {
+      value: '// Select a file from the tree to start editing\n// Ctrl+S to save • Ctrl+W to close tab',
+      language: 'javascript',
+      theme: 'vs-dark',
+      fontSize: 14,
+      fontFamily: "'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace",
+      fontLigatures: true,
+      minimap: { enabled: true, scale: 1, showSlider: 'mouseover' },
+      automaticLayout: true,
+      tabSize: 2,
+      insertSpaces: true,
+      wordWrap: 'on',
+      lineNumbers: 'on',
+      renderWhitespace: 'selection',
+      bracketPairColorization: { enabled: true },
+      scrollBeyondLastLine: false,
+      smoothScrolling: true,
+      cursorBlinking: 'smooth',
+      cursorSmoothCaretAnimation: 'on',
+      padding: { top: 12 },
+    });
+
+    // Ctrl+S save handler
+    monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => saveCurrentFile());
+    // Ctrl+W close tab
+    monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyW, () => {
+      if (activeFilePath) closeTab(activeFilePath);
+    });
+
+    terminalAdd('t-s', '✓ Monaco Editor ready');
+  });
 })();
 
+// ─── Load Project ───
 async function loadProject() {
   try {
     const res = await fetch(`/api/workspace/${PROJECT_ID}`);
-    const data = await res.json();
-    if (data.project) {
-      document.getElementById('projectName').textContent = data.project.description?.slice(0,60) || data.project.name;
-      document.getElementById('projectState').textContent = data.project.state;
-      if (data.project.downloadUrl) {
+    const j = await res.json();
+    if (j.project) {
+      document.getElementById('projectName').textContent = (j.project.description||j.project.name||'').slice(0,60);
+      document.getElementById('projectState').textContent = j.project.state;
+      if (j.project.downloadUrl) {
         const btn = document.getElementById('downloadBtn');
-        btn.href = data.project.downloadUrl;
+        btn.href = j.project.downloadUrl;
         btn.classList.remove('hidden');
       }
     }
-  } catch(e) { console.error(e); }
+  } catch(e) { terminalAdd('t-e','Project load error: '+e.message); }
 }
 
-// ═══ File Tree ═══
-async function refreshFiles() {
+// ─── File Tree ───
+async function refreshFileTree() {
   try {
     const res = await fetch(`/api/workspace/${PROJECT_ID}/files`);
-    const data = await res.json();
-    fileTree = data.tree || {};
+    const j = await res.json();
+    fileTree = j.tree || {};
     renderFileTree();
     document.getElementById('fileCount').textContent = Object.keys(fileTree).length ? `(${Object.keys(fileTree).length})` : '';
   } catch(e) {
-    document.getElementById('fileTree').innerHTML = '<div class="text-white/20 text-[11px] p-4">No files yet — task may still be running</div>';
+    document.getElementById('fileTree').innerHTML = '<div class="text-white/20 text-[11px] p-4">No files yet</div>';
   }
 }
 
 function renderFileTree() {
   const container = document.getElementById('fileTree');
   const entries = Object.entries(fileTree);
-  if (entries.length === 0) {
-    container.innerHTML = '<div class="text-white/20 text-[11px] p-4">Empty project</div>';
-    return;
-  }
+  if (!entries.length) { container.innerHTML = '<div class="text-white/20 text-[11px] p-4">Empty — run a task first</div>'; return; }
 
-  // Build tree structure
   const root = {};
   for (const [p, info] of entries) {
     const parts = p.split('/');
     let node = root;
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i];
-      if (i === parts.length - 1) {
-        node[part] = { ...info, _path: p, _isFile: true };
-      } else {
-        if (!node[part]) node[part] = { _isDir: true, _path: parts.slice(0, i+1).join('/') };
+      if (i === parts.length - 1) node[part] = { ...info, _path: p, _isFile: true };
+      else {
+        if (!node[part]) node[part] = { _isDir: true, _path: parts.slice(0,i+1).join('/') };
         node = node[part];
       }
     }
   }
-
-  container.innerHTML = renderTreeNodes(root);
+  container.innerHTML = renderTree(root);
   lucide.createIcons();
+  // Restore active file highlight
+  if (activeFilePath) {
+    const el = container.querySelector(`[data-path="${CSS.escape(activeFilePath)}"]`);
+    if (el) el.classList.add('active');
+  }
 }
 
-function renderTreeNodes(nodes, level = 0) {
-  const keys = Object.keys(nodes).sort((a, b) => {
-    const aDir = nodes[a]._isDir, bDir = nodes[b]._isDir;
-    if (aDir && !bDir) return -1;
-    if (!aDir && bDir) return 1;
-    return a.localeCompare(b);
-  });
-
-  return keys.map(name => {
-    const node = nodes[name];
-    const isDir = node._isDir;
-    const isFile = node._isFile;
-    const filePath = node._path;
-    const cls = isDir ? 'dir' : 'file';
-    const icon = isDir ? 'folder' : fileIcon(name);
-
-    if (isDir) {
-      return `
-        <div>
-          <div class="tree-item ${cls}" onclick="toggleDir(this)" data-path="${filePath}">
-            <i data-lucide="chevron-right" class="w-3 h-3 tree-chevron"></i>
-            <i data-lucide="${icon}" class="w-3.5 h-3.5"></i>
-            <span class="truncate">${name}</span>
-          </div>
-          <div class="tree-children hidden">${renderTreeNodes(node, level + 1)}</div>
-        </div>`;
-    }
-    return `
-      <div class="tree-item ${cls} ${currentFilePath===filePath?'active':''}" onclick="openFile('${filePath}')" data-path="${filePath}">
-        <span class="w-3"></span>
-        <i data-lucide="${icon}" class="w-3.5 h-3.5"></i>
-        <span class="truncate">${name}</span>
-      </div>`;
+function renderTree(nodes) {
+  return Object.keys(nodes).sort((a,b)=>{
+    const ad=nodes[a]._isDir, bd=nodes[b]._isDir;
+    return ad&&!bd?-1:!ad&&bd?1:a.localeCompare(b);
+  }).map(name=>{
+    const n=nodes[name], isDir=n._isDir, fp=n._path, icon=isDir?'folder':fileIcon(name);
+    if(isDir) return `<div><div class="tree-item dir" onclick="toggleDir(this)" data-path="${fp}"><i data-lucide="chevron-right" class="w-3 h-3 tree-chevron"></i><i data-lucide="${icon}" class="w-3.5 h-3.5"></i><span>${escHtml(name)}</span></div><div class="tree-children hidden">${renderTree(n)}</div></div>`;
+    return `<div class="tree-item file ${activeFilePath===fp?'active':''}" data-path="${fp}" onclick="openFile('${fp.replace(/'/g,"\\'")}')"><span class="w-3"></span><i data-lucide="${icon}" class="w-3.5 h-3.5"></i><span>${escHtml(name)}</span></div>`;
   }).join('');
 }
 
 function toggleDir(el) {
-  const children = el.nextElementSibling;
-  children.classList.toggle('hidden');
-  const chevron = el.querySelector('.tree-chevron');
-  if (chevron) chevron.style.transform = children.classList.contains('hidden') ? '' : 'rotate(90deg)';
+  const ch=el.nextElementSibling; ch.classList.toggle('hidden');
+  const cv=el.querySelector('.tree-chevron');
+  cv.style.transform=ch.classList.contains('hidden')?'':'rotate(90deg)';
 }
 
-function fileIcon(name) {
-  if (name.endsWith('.js')) return 'file-code';
-  if (name.endsWith('.ts')) return 'file-type';
-  if (name.endsWith('.json')) return 'file-json';
-  if (name.endsWith('.md')) return 'file-text';
-  if (name.endsWith('.html')) return 'file-code';
-  if (name.endsWith('.css')) return 'palette';
-  if (name.endsWith('.py')) return 'terminal';
-  if (name === 'package.json') return 'package';
-  return 'file';
+function fileIcon(n) {
+  if(n.endsWith('.js')||n.endsWith('.mjs')) return'file-code';
+  if(n.endsWith('.ts')||n.endsWith('.tsx')) return'file-type';
+  if(n.endsWith('.json')) return'file-json';
+  if(n.endsWith('.md')) return'file-text';
+  if(n.endsWith('.html')) return'file-code';
+  if(n.endsWith('.css')) return'palette';
+  if(n.endsWith('.py')) return'terminal';
+  if(n==='package.json') return'package';
+  return'file';
 }
 
-// ═══ Open File ═══
+// ─── Monaco: Open File ───
 async function openFile(filePath) {
+  // If already open, switch to it
+  if (openTabs[filePath]) {
+    switchTab(filePath);
+    return;
+  }
+
   try {
     const res = await fetch(`/api/workspace/${PROJECT_ID}/file?path=${encodeURIComponent(filePath)}`);
-    const data = await res.json();
-    if (data.content !== undefined) {
-      currentFilePath = filePath;
-      currentFileContent = data.content;
-      document.getElementById('currentFile').textContent = filePath;
-      const editor = document.getElementById('editorArea');
-      editor.value = data.content;
-      editor.disabled = false;
-      editor.focus();
-      document.getElementById('saveIndicator').classList.add('hidden');
-      renderFileTree();
-      lucide.createIcons();
+    const j = await res.json();
+    if (j.content !== undefined) {
+      const lang = detectLanguage(filePath);
+      const model = monaco.editor.createModel(j.content, lang);
+      openTabs[filePath] = { content: j.content, dirty: false, model };
+      addTab(filePath);
+      switchTab(filePath);
+      terminalAdd('t-i', `📄 Opened: ${filePath}`);
     }
-  } catch(e) { terminalAdd('t-e', 'Failed to open: ' + filePath); }
+  } catch(e) { terminalAdd('t-e', `Failed to open: ${filePath}`); }
 }
 
-async function saveFile() {
-  if (!currentFilePath) return;
-  const content = document.getElementById('editorArea').value;
-  try {
-    await fetch(`/api/workspace/${PROJECT_ID}/files`, {
-      method: 'PUT',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ path: currentFilePath, content }),
-    });
-    currentFileContent = content;
-    document.getElementById('saveIndicator').classList.remove('hidden');
-    terminalAdd('t-s', '✓ Saved: ' + currentFilePath);
-    setTimeout(() => document.getElementById('saveIndicator').classList.add('hidden'), 2000);
-  } catch(e) { terminalAdd('t-e', 'Save failed: ' + e.message); }
+function switchTab(filePath) {
+  activeFilePath = filePath;
+  const tab = openTabs[filePath];
+  if (!tab) return;
+  monacoEditor.setModel(tab.model);
+  // Highlight tab
+  document.querySelectorAll('.editor-tab').forEach(t=>t.classList.remove('active'));
+  const tabEl = document.querySelector(`.editor-tab[data-path="${CSS.escape(filePath)}"]`);
+  if(tabEl) tabEl.classList.add('active');
+  // Highlight tree
+  document.querySelectorAll('.tree-item.file').forEach(t=>t.classList.remove('active'));
+  const treeEl = document.querySelector(`.tree-item.file[data-path="${CSS.escape(filePath)}"]`);
+  if(treeEl) treeEl.classList.add('active');
+  // Hide welcome
+  document.getElementById('tabWelcome').style.display='none';
 }
 
-// ═══ SSE ═══
-function connectSSE() {
-  const evtSource = new EventSource(`/api/workspace/${PROJECT_ID}/stream`);
-  const status = document.getElementById('sseStatus');
-
-  evtSource.addEventListener('connected', () => { status.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 ml-auto'; });
-  evtSource.addEventListener('log', e => {
-    const d = JSON.parse(e.data);
-    const cls = d.level === 'error' ? 't-e' : d.level === 'warn' ? 't-w' : d.level === 'info' ? 't-i' : 't-s';
-    terminalAdd(cls, d.message);
-  });
-  evtSource.addEventListener('progress', e => {
-    const d = JSON.parse(e.data);
-    document.getElementById('projectState').textContent = d.state;
-    if (d.state === 'success') refreshFiles();
-  });
-  evtSource.addEventListener('fileChange', e => {
-    terminalAdd('t-i', '📝 File changed: ' + JSON.parse(e.data).path);
-    refreshFiles();
-  });
-  evtSource.onerror = () => { status.className = 'w-1.5 h-1.5 rounded-full bg-red-400 ml-auto'; };
+function addTab(filePath) {
+  const bar = document.getElementById('tabBar');
+  document.getElementById('tabWelcome').style.display='none';
+  // Remove old tab with same path
+  const old=bar.querySelector(`[data-path="${CSS.escape(filePath)}"]`);
+  if(old) old.remove();
+  const name=filePath.split('/').pop();
+  const tab=document.createElement('div');
+  tab.className='editor-tab';
+  tab.dataset.path=filePath;
+  tab.innerHTML=`${fileIcon(name)==='folder'?'📁':'📄'} ${escHtml(name)}<span class="tab-close" onclick="event.stopPropagation();closeTab('${filePath.replace(/'/g,"\\'")}')">×</span>`;
+  tab.onclick=()=>switchTab(filePath);
+  bar.appendChild(tab);
 }
 
-function terminalAdd(cls, msg) {
-  const t = document.getElementById('terminal');
-  const time = new Date().toLocaleTimeString('en-US', {hour12:false});
-  t.innerHTML += `<div class="${cls}"><span class="t-d">${time}</span> ${esc(msg)}</div>`;
-  t.scrollTop = t.scrollHeight;
-  if (t.children.length > 200) t.firstChild.remove();
-}
-
-// ═══ Chat ═══
-async function loadChat() {
-  try {
-    const res = await fetch(`/api/workspace/${PROJECT_ID}/chat`);
-    const data = await res.json();
-    conversationId = data.conversationId;
-    const container = document.getElementById('chatMessages');
-    if (data.messages && data.messages.length > 0) {
-      container.innerHTML = data.messages.map(m =>
-        `<div class="chat-msg ${m.role==='user'?'chat-user':'chat-ai'} animate-fade"><div class="text-[10px] text-white/20 mb-1">${m.role==='user'?'You':'AI'}</div><div class="text-white/70 text-xs whitespace-pre-wrap">${esc(m.content).slice(0,500)}</div></div>`
-      ).join('');
+function closeTab(filePath) {
+  if(openTabs[filePath]?.dirty) {
+    if(!confirm(`${filePath} has unsaved changes. Close anyway?`)) return;
+  }
+  if(openTabs[filePath]?.model) openTabs[filePath].model.dispose();
+  delete openTabs[filePath];
+  const tab=document.querySelector(`.editor-tab[data-path="${CSS.escape(filePath)}"]`);
+  if(tab) tab.remove();
+  if(activeFilePath===filePath) {
+    const remaining=Object.keys(openTabs);
+    if(remaining.length) switchTab(remaining[remaining.length-1]);
+    else {
+      activeFilePath=null;
+      monacoEditor.setModel(null);
+      document.getElementById('tabWelcome').style.display='flex';
     }
-    container.scrollTop = container.scrollHeight;
-  } catch(e) { /* chat not available */ }
-}
-
-async function sendChat() {
-  const input = document.getElementById('chatInput');
-  const msg = input.value.trim();
-  if (!msg) return;
-  input.value = '';
-
-  const container = document.getElementById('chatMessages');
-  container.innerHTML += `<div class="chat-msg chat-user animate-fade"><div class="text-[10px] text-white/20 mb-1">You</div><div class="text-white/70 text-xs">${esc(msg)}</div></div>`;
-  container.innerHTML += `<div class="chat-msg chat-ai animate-fade"><div class="text-[10px] text-white/20 mb-1">AI</div><div class="text-white/40 text-xs animate-pulse-slow">Thinking...</div></div>`;
-  container.scrollTop = container.scrollHeight;
-
-  try {
-    const res = await fetch(`/api/workspace/${PROJECT_ID}/chat`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ message: msg, userId: 'system' }),
-    });
-    const data = await res.json();
-    container.lastChild.innerHTML = `<div class="text-[10px] text-white/20 mb-1">AI</div><div class="text-white/70 text-xs whitespace-pre-wrap">${esc(data.reply?.content||'').slice(0,800)}</div>`;
-    container.scrollTop = container.scrollHeight;
-    refreshFiles();
-  } catch(e) {
-    container.lastChild.innerHTML = `<div class="text-[10px] text-white/20 mb-1">AI</div><div class="text-red-400/70 text-xs">Error: ${esc(e.message)}</div>`;
   }
 }
 
-// ═══ Utils ═══
-function esc(s) { if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML; }
+// ─── Save File ───
+async function saveCurrentFile() {
+  if(!activeFilePath || !openTabs[activeFilePath]) return;
+  const content = monacoEditor.getValue();
+  const status = document.getElementById('saveStatus');
+  try {
+    await fetch(`/api/workspace/${PROJECT_ID}/files`, {
+      method:'PUT', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({path:activeFilePath, content}),
+    });
+    openTabs[activeFilePath].content = content;
+    openTabs[activeFilePath].dirty = false;
+    openTabs[activeFilePath].model.updateOptions({ tabSize: 2 });
+    status.classList.remove('hidden');
+    terminalAdd('t-s', `✓ Saved: ${activeFilePath}`);
+    setTimeout(()=>status.classList.add('hidden'),2000);
+    // Update tab appearance
+    const tab=document.querySelector(`.editor-tab[data-path="${CSS.escape(activeFilePath)}"]`);
+    if(tab){tab.style.color='';tab.querySelector('.tab-close').textContent='×';}
+  } catch(e) {
+    terminalAdd('t-e', `Save failed: ${e.message}`);
+  }
+}
 
-// Keyboard shortcuts
-document.addEventListener('keydown', e => {
-  if ((e.ctrlKey||e.metaKey) && e.key === 's') { e.preventDefault(); saveFile(); }
+// Track dirty state
+setInterval(()=>{
+  if(!activeFilePath||!openTabs[activeFilePath]||!monacoEditor) return;
+  const current=monacoEditor.getValue();
+  const saved=openTabs[activeFilePath].content;
+  openTabs[activeFilePath].dirty = current !== saved;
+},1000);
+
+function detectLanguage(fp) {
+  if(fp.endsWith('.js')||fp.endsWith('.mjs')) return'javascript';
+  if(fp.endsWith('.ts')) return'typescript';
+  if(fp.endsWith('.tsx')) return'typescript';
+  if(fp.endsWith('.json')||fp==='package.json') return'json';
+  if(fp.endsWith('.md')) return'markdown';
+  if(fp.endsWith('.html')) return'html';
+  if(fp.endsWith('.css')) return'css';
+  if(fp.endsWith('.py')) return'python';
+  if(fp.endsWith('.yaml')||fp.endsWith('.yml')) return'yaml';
+  return'plaintext';
+}
+
+// ─── SSE ───
+function connectSSE() {
+  const sse=new EventSource(`/api/workspace/${PROJECT_ID}/stream`);
+  const st=document.getElementById('sseStatus');
+  sse.addEventListener('connected',()=>{st.className='w-1.5 h-1.5 rounded-full bg-emerald-400 ml-auto'});
+  sse.addEventListener('log',e=>{const d=JSON.parse(e.data);terminalAdd(d.level==='error'?'t-e':d.level==='warn'?'t-w':'t-i',d.message)});
+  sse.addEventListener('progress',e=>{const d=JSON.parse(e.data);document.getElementById('projectState').textContent=d.state;if(d.state==='success'||d.state==='failed')refreshFileTree()});
+  sse.addEventListener('fileChange',e=>{terminalAdd('t-i','📝 '+JSON.parse(e.data).path);refreshFileTree()});
+  sse.onerror=()=>{st.className='w-1.5 h-1.5 rounded-full bg-red-400 ml-auto'};
+}
+
+// ─── Chat ───
+let conversationId=null;
+async function loadChat() {
+  try {
+    const res=await fetch(`/api/workspace/${PROJECT_ID}/chat`);
+    const j=await res.json();
+    conversationId=j.conversationId||null;
+    if(j.messages?.length){
+      document.getElementById('chatMessages').innerHTML=j.messages.map(m=>
+        `<div class="chat-msg ${m.role==='user'?'chat-user':'chat-ai'} animate-fade"><div class="text-[9px] text-white/20 mb-1">${m.role==='user'?'You':'AI'}</div><div class="text-white/70 text-[11px] whitespace-pre-wrap">${escHtml(m.content||'').slice(0,600)}</div></div>`
+      ).join('');
+    }
+  } catch(e){}
+}
+
+async function sendChat() {
+  const inp=document.getElementById('chatInput');
+  const msg=inp.value.trim(); if(!msg) return; inp.value='';
+  const box=document.getElementById('chatMessages');
+  box.innerHTML+=`<div class="chat-msg chat-user animate-fade"><div class="text-[9px] text-white/20 mb-1">You</div><div class="text-white/70 text-[11px]">${escHtml(msg)}</div></div>`;
+  box.innerHTML+=`<div class="chat-msg chat-ai animate-fade"><div class="text-[9px] text-white/20 mb-1">AI</div><div class="text-white/40 text-[11px]"><span class="spin inline-block mr-1">◌</span>Thinking...</div></div>`;
+  box.scrollTop=box.scrollHeight;
+  try {
+    const res=await fetch(`/api/workspace/${PROJECT_ID}/chat`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,userId:'system'})});
+    const j=await res.json();
+    conversationId=j.conversationId;
+    box.lastChild.innerHTML=`<div class="text-[9px] text-white/20 mb-1">AI</div><div class="text-white/70 text-[11px] whitespace-pre-wrap">${escHtml(j.reply?.content||'(no response)').slice(0,800)}</div>`;
+    box.scrollTop=box.scrollHeight;
+    refreshFileTree();
+  } catch(e){
+    box.lastChild.innerHTML=`<div class="text-[9px] text-white/20 mb-1">AI</div><div class="text-red-400/70 text-[11px]">Error: ${escHtml(e.message)}</div>`;
+  }
+}
+
+// ─── Terminal ───
+function terminalAdd(cls, msg) {
+  const t=document.getElementById('terminalBody');
+  const time=new Date().toLocaleTimeString('en-US',{hour12:false});
+  t.innerHTML+=`<div class="${cls}"><span class="t-d">${time}</span> ${escHtml(msg)}</div>`;
+  t.scrollTop=t.scrollHeight;
+  while(t.children.length>200) t.firstChild.remove();
+}
+
+// ─── Utils ───
+function escHtml(s) { if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML; }
+
+// Clean up
+window.addEventListener('beforeunload',()=>{
+  if(monacoEditor) monacoEditor.dispose();
 });
 </script>
 </body>
