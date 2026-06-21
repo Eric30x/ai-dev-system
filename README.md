@@ -55,13 +55,13 @@ npm run worker          # Terminal 2
 
 ```mermaid
 graph LR
-    A[💬 Natural Language] --> B[🧠 Planner LLM]
-    B --> C[⚡ Executor]
-    C --> D[🔍 Verifier]
-    D -->|Issues| E[🤖 AI Fixer LLM]
+    A[Natural Language] --> B[Planner LLM]
+    B --> C[ Executor]
+    C --> D[ Verifier]
+    D -->|Issues| E[ AI Fixer LLM]
     E -->|≤3 rounds| D
-    D -->|Pass| F[📦 Artifact System]
-    F --> G[⬇️ Download ZIP]
+    D -->|Pass| F[ Artifact System]
+    F --> G[⬇ Download ZIP]
 
     B -.-> H[LLM Router]
     E -.-> H
@@ -76,20 +76,20 @@ graph LR
 
 ## Features
 
-| | |
-|---|---|
-| 🧠 **Multi-Agent Pipeline** | Planner → Executor → Verifier → AI Fixer → Packager |
-| 🤖 **AI Fixer** | LLM diagnoses errors, generates patches, retries up to 3 rounds |
-| 💬 **Project Agent** | Chat with AI that actually writes code, not just text |
-| ✏️ **Monaco Editor** | VS Code-quality workspace with file tree + tabs + syntax highlighting |
-| 📦 **Artifact System** | Every build auto-snapshotted: source zip, logs, metadata |
-| ⏪ **Rollback** | One-click restore to any previous version |
-| 📡 **Real-time SSE** | Live terminal logs pushed from Worker to browser |
-| 🔀 **LLM Router** | DeepSeek / Claude / OpenAI / Gemini with auto-fallback |
-| 🗄️ **PostgreSQL + Prisma** | 10 relational tables, type-safe queries |
-| ⚡ **Redis + BullMQ** | Distributed job queue with retry, backoff, dead letter |
-| 🔐 **JWT + API Keys** | Register/login + programmatic access |
-| 💰 **Stripe Billing** | Free tier (5/day) → Pro — gracefully degrades when unconfigured |
+|                          |                                                                       |
+| ------------------------ | --------------------------------------------------------------------- |
+| **Multi-Agent Pipeline** | Planner → Executor → Verifier → AI Fixer → Packager                   |
+| **AI Fixer**             | LLM diagnoses errors, generates patches, retries up to 3 rounds       |
+| **Project Agent**        | Chat with AI that actually writes code, not just text                 |
+| **Monaco Editor**        | VS Code-quality workspace with file tree + tabs + syntax highlighting |
+| **Artifact System**      | Every build auto-snapshotted: source zip, logs, metadata              |
+| **Rollback**             | One-click restore to any previous version                             |
+| **Real-time SSE**        | Live terminal logs pushed from Worker to browser                      |
+| **LLM Router**           | DeepSeek / Claude / OpenAI / Gemini with auto-fallback                |
+| **PostgreSQL + Prisma**  | 10 relational tables, type-safe queries                               |
+| **Redis + BullMQ**       | Distributed job queue with retry, backoff, dead letter                |
+| **JWT + API Keys**       | Register/login + programmatic access                                  |
+| **Stripe Billing**       | Free tier (5/day) → Pro — gracefully degrades when unconfigured       |
 
 ## Quick Start
 
@@ -107,17 +107,17 @@ Open **http://localhost:3000**
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
+| Layer    | Technology                                                   |
+| -------- | ------------------------------------------------------------ |
 | Frontend | TailwindCSS, Monaco Editor (VS Code core), Lucide Icons, SSE |
-| Backend | Node.js, Express 5, JWT, Stripe |
-| Database | PostgreSQL, Prisma ORM |
-| Queue | Redis, BullMQ |
-| AI | DeepSeek, Claude, OpenAI, Gemini |
-| Infra | Docker, Docker Compose |
-| Editor | Monaco Editor (`monaco.editor.create`) |
+| Backend  | Node.js, Express 5, JWT, Stripe                              |
+| Database | PostgreSQL, Prisma ORM                                       |
+| Queue    | Redis, BullMQ                                                |
+| AI       | DeepSeek, Claude, OpenAI, Gemini                             |
+| Infra    | Docker, Docker Compose                                       |
+| Editor   | Monaco Editor (`monaco.editor.create`)                       |
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 apps/api/routes/     # REST endpoints
@@ -133,24 +133,24 @@ docs/                # Full documentation
 
 > *Actual output from the platform — each created with a single prompt:*
 
-| Prompt | Generated |
-|--------|-----------|
-| *"Express server with GET /health"* | `server.js` + `package.json` + `npm install` ✅ |
-| *"Markdown blog engine"* | Express + EJS templates + file-based posts ✅ |
-| *"SaaS dashboard with Next.js"* | React components + Tailwind + Prisma schema ✅ |
+| Prompt                              | Generated                                    |
+| ----------------------------------- | -------------------------------------------- |
+| *"Express server with GET /health"* | `server.js` + `package.json` + `npm install` |
+| *"Markdown blog engine"*            | Express + EJS templates + file-based posts   |
+| *"SaaS dashboard with Next.js"*     | React components + Tailwind + Prisma schema  |
 
 ---
 
 ## Documentation
 
-| Document | |
-|----------|-----|
-| [Architecture](docs/architecture.md) | System design, data flow, scaling strategy |
-| [Agent Workflow](docs/agent-workflow.md) | Planner → Executor → Verifier → Fixer pipeline |
-| [Artifact System](docs/artifact-system.md) | Versioning, rollback, storage |
-| [API Reference](docs/api.md) | All endpoints with request/response examples |
-| [Database](docs/database.md) | Schema ERD, models, enums, migrations |
-| [Deployment](docs/deployment.md) | VPS, Docker, Railway, Render |
+| Document                                   |                                                |
+| ------------------------------------------ | ---------------------------------------------- |
+| [Architecture](docs/architecture.md)       | System design, data flow, scaling strategy     |
+| [Agent Workflow](docs/agent-workflow.md)   | Planner → Executor → Verifier → Fixer pipeline |
+| [Artifact System](docs/artifact-system.md) | Versioning, rollback, storage                  |
+| [API Reference](docs/api.md)               | All endpoints with request/response examples   |
+| [Database](docs/database.md)               | Schema ERD, models, enums, migrations          |
+| [Deployment](docs/deployment.md)           | VPS, Docker, Railway, Render                   |
 
 ---
 
@@ -192,7 +192,7 @@ MIT © [Eric30x](https://github.com/Eric30x)
 
 <div align="center">
 
-**⭐ Star this repo if it inspires you**
+** Star this repo if it inspires you**
 
 [![Star History](https://api.star-history.com/svg?repos=Eric30x/ai-dev-system&type=Date)](https://star-history.com/#Eric30x/ai-dev-system&Date)
 
